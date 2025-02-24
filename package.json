@@ -1,0 +1,37 @@
+{
+  "name": "firewand",
+  "version": "0.1.0",
+  "description": "This is library for firebase",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "prepublishOnly": "npm run build",
+    "publishOnly": "npm publish --access public"
+  },
+  "keywords": [
+    "stripe",
+    "firebase"
+  ],
+  "author": "Dragos Catalin (https://github.com/dragoscv)",
+  "license": "ISC",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/dragoscv/firewand.git"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.1",
+    "@types/react": "^19.0.10",
+    "esbuild": "^0.24.0",
+    "typescript": "^5.7.2"
+  },
+  "dependencies": {
+    "stripe-firebase": "^0.3.0",
+    "tslib": "^2.8.1"
+  },
+  "peerDependencies": {
+    "firebase": "^11.3.1"
+  }
+}
