@@ -1,6 +1,6 @@
 {
   "name": "firewand",
-  "version": "0.1.0",
+  "version": "0.1.9",
   "description": "This is library for firebase",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -9,7 +9,7 @@
     "start": "node dist/index.js",
     "test": "echo \"Error: no test specified\" && exit 1",
     "prepublishOnly": "npm run build",
-    "publishOnly": "npm publish --access public"
+    "ppublish": "npm publish --access public"
   },
   "keywords": [
     "stripe",
@@ -28,8 +28,8 @@
     "typescript": "^5.7.2"
   },
   "dependencies": {
-    "stripe-firebase": "^0.3.0",
-    "tslib": "^2.8.1"
+    "tslib": "^2.8.1",
+    "uuid": "^11.1.0"
   },
   "peerDependencies": {
     "firebase": "^11.3.1"
