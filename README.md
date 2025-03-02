@@ -57,10 +57,6 @@ NEXT_PUBLIC_FIREBASE_APP_ID=your_app_id
 NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID=your_measurement_id
 NEXT_PUBLIC_FIREBASE_FUNCTIONS_REGION=us-central1
 
-# Stripe Configuration
-NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=your_stripe_publishable_key
-NEXT_PUBLIC_STRIPE_SECRET_KEY=your_stripe_secret_key
-
 # Firebase Cloud Messaging
 NEXT_PUBLIC_VAPID_KEY=your_vapid_key
 

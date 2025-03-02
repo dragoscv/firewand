@@ -1,7 +1,7 @@
 {
   "name": "firewand",
-  "version": "0.2.1",
-  "description": "This is an utility library for firebase",
+  "version": "0.2.2",
+  "description": "Firewand is a modular Firebase utility library for simplifying interactions with Firebase services such as Analytics, Auth, Firestore, Storage, and Stripe payments.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
@@ -9,7 +9,7 @@
     "start": "node dist/index.js",
     "test": "echo \"Error: no test specified\" && exit 1",
     "prepublishOnly": "npm run build",
-    "ppublish": "npm publish --access public"
+    "ppublish": "npm run build && npm publish --access public"
   },
   "keywords": [
     "stripe",
