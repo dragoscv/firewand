@@ -1,7 +1,7 @@
 {
   "name": "firewand",
-  "version": "0.1.9",
-  "description": "This is library for firebase",
+  "version": "0.2.1",
+  "description": "This is an utility library for firebase",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {

@@ -1,4 +1,4 @@
-import React, { createContext, useMemo, useReducer, useEffect, useCallback } from 'react';
+import React, { createContext, useMemo, useReducer, useEffect, useCallback, useState } from 'react';
 import { getProducts, getCurrentUserSubscriptions, onCurrentUserSubscriptionUpdate, Product, Subscription, stripePayments, useUserSession, firebaseApp, firestoreDB, firebaseMessaging } from ".";
 import { collection, doc, setDoc, getDocs, query as queryFirestore, where, onSnapshot, collectionGroup, orderBy, limit, QuerySnapshot, DocumentSnapshot, deleteDoc, startAfter, getDoc, Timestamp } from "firebase/firestore";
 import { fetchAndActivate, getRemoteConfig, getValue } from "firebase/remote-config";
@@ -9,13 +9,23 @@ import {
     FirewandContextProps,
     FirewandProviderProps,
     FirewandStateProps,
-    FirewandActionProps
+    FirewandActionProps,
+    Profile
 } from './types';
 
 export const FirewandContext = createContext<FirewandContextProps | undefined>(undefined);
 
 export function FirewandProvider({ children, app }: FirewandProviderProps) {
+    if (!app) {
+        throw new Error('App name is required in the FirewandProvider component');
+    }
     const { user, userDetails } = useUserSession();
+    const [loading, setLoading] = useState({
+        profiles: false,
+        subscriptions: false,
+        payments: false,
+        // other resources
+    });
 
     const initialState: FirewandStateProps = {
         products: [],
@@ -42,7 +52,32 @@ export function FirewandProvider({ children, app }: FirewandProviderProps) {
                 return { ...state, products: action.payload };
             case 'SET_SUBSCRIPTIONS':
                 return { ...state, subscriptions: action.payload };
+            case 'SET_USERS':
+                return { ...state, users: action.payload };
+            case 'SET_USER_DETAILS':
+                return { ...state, userDetails: action.payload };
+            case 'SET_USER_PROFILES':
+                return { ...state, userProfiles: action.payload };
+            case 'SET_USER_PAYMENTS':
+                return { ...state, userPayments: action.payload };
+            case 'SET_USER_INVOICES':
+                return { ...state, userInvoices: action.payload };
+            case 'SET_PLATFORM_PAYMENTS':
+                return { ...state, platformPayments: action.payload };
+            case 'SET_IS_SUBSCRIBED':
+                return { ...state, isSubscribed: action.payload };
+            case 'SET_USER_ACTIVE_SUBSCRIPTIONS':
+                return { ...state, userActiveSubscriptions: action.payload };
+            case 'SET_CURRENT_PROFILE':
+                return { ...state, currentProfile: action.payload };
+            case 'SET_REMOTE_CONFIG':
+                return { ...state, remoteConfig: action.payload };
+            case 'SET_LOADING_STEPS':
+                return { ...state, loadingSteps: action.payload };
+            case 'SET_CREDITS_TOTAL':
+                return { ...state, creditsTotal: action.payload };
             default:
+                console.warn(`Unhandled action type: ${action.type}`);
                 return state;
         }
     }
@@ -198,39 +233,45 @@ export function FirewandProvider({ children, app }: FirewandProviderProps) {
             const messaging: Messaging | null = await firebaseMessaging;
             const userDocRef = doc(firestoreDB, 'users', user.uid);
 
-            const firebaseToken = await getDoc(userDocRef).then((doc) => {
-                if (doc.exists()) {
-                    const tokens = doc.data().fcmTokens || {};
-                    const token = tokens[deviceId];
-                    console.log('Current token for device', token);
-                    return token || null;
-                } else {
-                    return null;
-                }
-            }).catch((error) => {
-                console.log("Error getting document:", error);
-            });
+            // Get the user document to check for existing tokens
+            const userDoc = await getDoc(userDocRef);
+            const userData = userDoc.exists() ? userDoc.data() : {};
+            const existingTokens = userData.fcmTokens || {};
+            const currentToken = existingTokens[deviceId];
 
+            console.log('Current token for device', currentToken);
+
+            // Only proceed with getting a new token if we need one
             const status = await Notification.requestPermission();
             if (status === 'granted') {
                 if (messaging) {
                     try {
                         const token = await getToken(messaging, { vapidKey: process.env.NEXT_PUBLIC_VAPID_KEY });
-                        if (token) {
+                        if (token && token !== currentToken) {
                             console.log('New token generated:', token);
+
+                            // Create updated tokens object with all existing tokens preserved
+                            const updatedTokens = {
+                                ...existingTokens,
+                                [deviceId]: token
+                            };
+
                             await setDoc(userDocRef, {
-                                fcmTokens: {
-                                    [deviceId]: token
-                                }
+                                fcmTokens: updatedTokens
                             }, { merge: true });
                             return token;
                         } else {
-                            console.log('No Instance ID token available.');
-                            return null;
+                            console.log('Using existing token');
+                            return currentToken;
                         }
                     } catch (error) {
                         console.log('Error retrieving token:', error);
-                        getFCMToken();
+                        // Don't recursively call - use setTimeout instead
+                        setTimeout(() => {
+                            if (tries < 3) {
+                                getFCMToken();
+                            }
+                        }, 1000);
                     }
                 } else {
                     console.log('No messaging instance available.');
@@ -309,7 +350,7 @@ export function FirewandProvider({ children, app }: FirewandProviderProps) {
                     const subscriptionProductId = subscription.product
                     const product = state.products?.find((product: any) => product.id === subscriptionProductId)
                     // console.log(product);
-                    if (product?.stripe_metadata_app === 'bursax') {
+                    if (product?.stripe_metadata_app === app) {
                         dispatch({ type: 'SET_IS_SUBSCRIBED', payload: true });
                         activeSubscriptions.push(subscription);
                         dispatch({ type: 'SET_LOADING_STEPS', payload: 'isSubscribed' })
@@ -384,11 +425,11 @@ export function FirewandProvider({ children, app }: FirewandProviderProps) {
         // console.log('Getting user profiles')
         const q = queryFirestore(collection(firestoreDB, `profiles`), where('uid', '==', user.uid));
         const unsubscribe = onSnapshot(q, (querySnapshot) => {
-            const profiles: any = [];
+            const profiles: Profile[] = [];
             querySnapshot.forEach((doc) => {
                 const docData = doc.data();
                 docData.id = doc.id;
-                profiles.push(docData);
+                profiles.push(docData as Profile);
             });
             // console.log(profiles);
             dispatch({ type: 'SET_USER_PROFILES', payload: profiles });

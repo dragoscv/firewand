@@ -73,7 +73,9 @@ export {
   getCurrentUserSubscription,
   getCurrentUserSubscriptions,
   onCurrentUserSubscriptionUpdate
-} from "./subscription"; export type {
+} from "./subscription";
+
+export type {
   GetSubscriptionsOptions,
   Subscription,
   SubscriptionChangeType,
@@ -83,5 +85,5 @@ export {
 
 export * from "./utils";
 
-export * from "../provider";
+
 
