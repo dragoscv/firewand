@@ -1,11 +1,14 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.currentFirebaseApp = exports.firebaseDB = exports.firebaseFunctions = exports.firebaseMessaging = exports.firebaseAnalytics = exports.firebaseStorage = exports.firebaseAuth = exports.firestoreDB = exports.firebaseConfig = void 0;
 /**
  * Firebase configuration and initialization module.
- * 
+ *
  * This module handles initialization of Firebase services and connects to emulators
  * when running in development mode with emulators enabled.
- * 
+ *
  * @module firebase/firebase.config
- * 
+ *
  * @exports firebaseConfig - Configuration object for Firebase initialization
  * @exports firestoreDB - Firestore database instance
  * @exports firebaseAuth - Firebase authentication instance
@@ -17,14 +20,14 @@
  * @exports currentFirebaseApp - Reference to the default Firebase app instance
  */
 // import { initializeApp as initializeAdminApp } from 'firebase-admin';
-import { initializeApp, getApp, FirebaseApp } from 'firebase/app';
-import { getFirestore, connectFirestoreEmulator } from 'firebase/firestore';
-import { getAuth, connectAuthEmulator } from 'firebase/auth';
-import { getStorage, connectStorageEmulator } from "firebase/storage";
-import { getAnalytics, isSupported } from 'firebase/analytics';
-import { getMessaging, isSupported as isSupportedMessaging, Messaging } from "firebase/messaging";
-import { getFunctions, connectFunctionsEmulator } from "firebase/functions";
-import { getDatabase, Database, connectDatabaseEmulator } from "firebase/database";
+var app_1 = require("firebase/app");
+var firestore_1 = require("firebase/firestore");
+var auth_1 = require("firebase/auth");
+var storage_1 = require("firebase/storage");
+var analytics_1 = require("firebase/analytics");
+var messaging_1 = require("firebase/messaging");
+var functions_1 = require("firebase/functions");
+var database_1 = require("firebase/database");
 /**
  * Firebase configuration object
  * @typedef {Object} FirebaseConfig
@@ -36,7 +39,7 @@ import { getDatabase, Database, connectDatabaseEmulator } from "firebase/databas
  * @property {string} appId - Firebase app ID
  * @property {string} measurementId - Firebase measurement ID
  */
-export const firebaseConfig = {
+exports.firebaseConfig = {
     apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY || process.env.EXPO_PUBLIC_FIREBASE_API_KEY,
     authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN || process.env.EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN,
     projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || process.env.EXPO_PUBLIC_FIREBASE_PROJECT_ID,
@@ -46,122 +49,103 @@ export const firebaseConfig = {
     measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID || process.env.EXPO_PUBLIC_FIREBASE_MEASUREMENT_ID,
     databaseURL: process.env.NEXT_PUBLIC_FIREBASE_DATABASE_URL || process.env.EXPO_PUBLIC_FIREBASE_DATABASE_URL
 };
-
-const useEmulators = process.env.USE_EMULATORS === 'true' ? true : false;
-const functionsRegion = process.env.NEXT_PUBLIC_FIREBASE_FUNCTIONS_REGION || 'us-central1';
-
+var useEmulators = process.env.USE_EMULATORS === 'true' ? true : false;
+var functionsRegion = process.env.NEXT_PUBLIC_FIREBASE_FUNCTIONS_REGION || 'us-central1';
 /**
  * Firebase app instance
  * @type {import('firebase/app').FirebaseApp}
  */
-const firebaseApp = initializeApp(firebaseConfig);
+var firebaseApp = (0, app_1.initializeApp)(exports.firebaseConfig);
 // export const firebaseAdminApp = initializeAdminApp(adminConfig);
-
 /**
  * Firestore database instance
  * @type {import('firebase/firestore').Firestore}
  */
-const firestoreDB = getFirestore(firebaseApp);
-
+var firestoreDB = (0, firestore_1.getFirestore)(firebaseApp);
+exports.firestoreDB = firestoreDB;
 if (process.env.NODE_ENV === 'development' && useEmulators) {
-    connectFirestoreEmulator(firestoreDB, 'localhost', 8080);
+    (0, firestore_1.connectFirestoreEmulator)(firestoreDB, 'localhost', 8080);
 }
-
 /**
  * Firebase authentication instance
  * @type {import('firebase/auth').Auth}
  */
-const firebaseAuth = getAuth(firebaseApp);
+var firebaseAuth = (0, auth_1.getAuth)(firebaseApp);
+exports.firebaseAuth = firebaseAuth;
 if (process.env.NODE_ENV === 'development' && useEmulators) {
-    connectAuthEmulator(firebaseAuth, 'http://localhost:9099');
+    (0, auth_1.connectAuthEmulator)(firebaseAuth, 'http://localhost:9099');
 }
-
 /**
  * Firebase storage instance
  * @type {import('firebase/storage').Storage}
  */
-const firebaseStorage = getStorage(firebaseApp);
+var firebaseStorage = (0, storage_1.getStorage)(firebaseApp);
+exports.firebaseStorage = firebaseStorage;
 if (process.env.NODE_ENV === 'development' && useEmulators) {
-    connectStorageEmulator(firebaseStorage, 'localhost', 9199);
+    (0, storage_1.connectStorageEmulator)(firebaseStorage, 'localhost', 9199);
 }
-
 /**
  * Firebase analytics instance
  * @type {Promise<import('firebase/analytics').Analytics|null>}
  */
-const firebaseAnalytics = isSupported().then((isSupported) => {
+var firebaseAnalytics = (0, analytics_1.isSupported)().then(function (isSupported) {
     if (isSupported) {
-        return getAnalytics(firebaseApp);
+        return (0, analytics_1.getAnalytics)(firebaseApp);
     }
     return null;
 });
-
-
+exports.firebaseAnalytics = firebaseAnalytics;
 /**
  * Asynchronously initializes Firebase Messaging if it's supported by the browser.
- * 
+ *
  * @remarks
  * This variable holds a Promise that resolves to a Firebase Messaging instance or null.
  * It first checks if the browser supports Firebase Messaging, and if so, initializes
  * the Messaging service with the Firebase application.
- * 
+ *
  * @returns A Promise that resolves to a Firebase Messaging instance if messaging is supported,
  * or null if it's not supported in the current browser environment.
  */
-const firebaseMessaging: Promise<Messaging | null> = isSupportedMessaging().then((isSupported) => {
+var firebaseMessaging = (0, messaging_1.isSupported)().then(function (isSupported) {
     if (isSupported) {
-        return getMessaging(firebaseApp);
+        return (0, messaging_1.getMessaging)(firebaseApp);
     }
     return null;
 });
-
+exports.firebaseMessaging = firebaseMessaging;
 /**
  * Instance of Firebase Realtime Database initialized with the Firebase app.
- * 
+ *
  * This database instance can be used to read from or write to the database,
  * set up listeners for data changes, and perform other database operations.
- * 
+ *
  * @type {Database}
  * @see {@link https://firebase.google.com/docs/database/web/start|Firebase Realtime Database Documentation}
  */
-const firebaseDB: Database = getDatabase(firebaseApp);
+var firebaseDB = (0, database_1.getDatabase)(firebaseApp);
+exports.firebaseDB = firebaseDB;
 if (process.env.NODE_ENV === 'development' && useEmulators) {
-    connectDatabaseEmulator(firebaseDB, 'localhost', 9080);
+    (0, database_1.connectDatabaseEmulator)(firebaseDB, 'localhost', 9080);
 }
-
-
-
 /**
  * Represents the current Firebase application instance.
- * 
+ *
  * This constant holds a reference to the default Firebase app instance
  * that has been initialized in the application. It's retrieved using
  * Firebase's getApp method with the '[DEFAULT]' app name.
- * 
+ *
  * @type {FirebaseApp} The Firebase application instance
  */
-const currentFirebaseApp: FirebaseApp = getApp('[DEFAULT]');
-
+var currentFirebaseApp = (0, app_1.getApp)('[DEFAULT]');
+exports.currentFirebaseApp = currentFirebaseApp;
 /**
  * Firebase Functions instance configured to run in the functionsRegion or "us-central1" region.
  * This allows calling Cloud Functions deployed to the specified region.
- * 
+ *
  * @see {@link https://firebase.google.com/docs/functions/callable Cloud Functions documentation}
  */
-const firebaseFunctions = getFunctions(firebaseApp, functionsRegion);
+var firebaseFunctions = (0, functions_1.getFunctions)(firebaseApp, functionsRegion);
+exports.firebaseFunctions = firebaseFunctions;
 if (process.env.NODE_ENV === 'development' && useEmulators) {
-    connectFunctionsEmulator(firebaseFunctions, 'localhost', 5001);
+    (0, functions_1.connectFunctionsEmulator)(firebaseFunctions, 'localhost', 5001);
 }
-
-
-export {
-    firestoreDB,
-    firebaseAuth,
-    firebaseStorage,
-    firebaseAnalytics,
-    firebaseMessaging,
-    firebaseFunctions,
-    firebaseDB,
-    currentFirebaseApp
-};
-
