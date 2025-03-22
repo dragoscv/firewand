@@ -1,5 +1,10 @@
 import React, { createContext, useMemo, useReducer, useEffect, useCallback, useState } from 'react';
-import { getProducts, getCurrentUserSubscriptions, onCurrentUserSubscriptionUpdate, Product, Subscription, stripePayments, useUserSession, firebaseApp, firestoreDB, firebaseMessaging } from ".";
+import { getProducts } from "./stripe/product";
+import { getCurrentUserSubscriptions, onCurrentUserSubscriptionUpdate } from "./stripe/subscription";
+import { stripePayments } from "./stripe/utils";
+import { useUserSession } from "./hooks/auth";
+import { firebaseApp } from "./firebase/app";
+import { firestoreDB, firebaseMessaging } from "./firebase/fireabase.config";
 import { collection, doc, setDoc, getDocs, query as queryFirestore, where, onSnapshot, collectionGroup, orderBy, limit, QuerySnapshot, DocumentSnapshot, deleteDoc, startAfter, getDoc, Timestamp } from "firebase/firestore";
 import { fetchAndActivate, getRemoteConfig, getValue } from "firebase/remote-config";
 import { getToken, Messaging } from "firebase/messaging";

@@ -17,11 +17,13 @@
 import { FirebaseApp } from "firebase/app";
 import {
   getStripePayments,
-  StripePayments,
+  StripePayments
+} from "./init";
+import {
   createCheckoutSession,
   SessionCreateParams,
   SessionConfig
-} from ".";
+} from "./session";
 
 /**
  * Initializes Stripe payments with the given Firebase app and collections.

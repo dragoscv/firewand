@@ -19,12 +19,26 @@
 // import { initializeApp as initializeAdminApp } from 'firebase-admin';
 import { initializeApp, getApp, FirebaseApp } from 'firebase/app';
 import { getFirestore, connectFirestoreEmulator } from 'firebase/firestore';
-import { getAuth, connectAuthEmulator } from 'firebase/auth';
+import {
+    getAuth,
+    connectAuthEmulator,
+    initializeAuth,
+    browserLocalPersistence,
+    Auth,
+    Persistence
+} from 'firebase/auth';
 import { getStorage, connectStorageEmulator } from "firebase/storage";
 import { getAnalytics, isSupported } from 'firebase/analytics';
 import { getMessaging, isSupported as isSupportedMessaging, Messaging } from "firebase/messaging";
 import { getFunctions, connectFunctionsEmulator } from "firebase/functions";
 import { getDatabase, Database, connectDatabaseEmulator } from "firebase/database";
+
+/**
+ * Platform detection
+ */
+const isReactNative = typeof navigator !== 'undefined' &&
+    /ReactNative/.test(navigator.userAgent);
+
 /**
  * Firebase configuration object
  * @typedef {Object} FirebaseConfig
@@ -71,9 +85,46 @@ if (process.env.NODE_ENV === 'development' && useEmulators) {
  * Firebase authentication instance
  * @type {import('firebase/auth').Auth}
  */
-const firebaseAuth = getAuth(firebaseApp);
-if (process.env.NODE_ENV === 'development' && useEmulators) {
-    connectAuthEmulator(firebaseAuth, 'http://localhost:9099');
+// Type declarations for dynamic imports
+type ReactNativeAuthModule = {
+    getReactNativePersistence: (storage: any) => Persistence;
+};
+
+// Initialize Firebase Auth with platform-specific configuration
+let firebaseAuth: Auth = getAuth(firebaseApp);
+
+if (isReactNative) {
+    // In React Native environment, initialize auth with persistence
+    const initializeAuthWithPersistence = async () => {
+        try {
+            const AsyncStorage = await import('@react-native-async-storage/async-storage').catch(() => null);
+            // Use explicit path for React Native auth
+            const reactNativeAuth = await import('@firebase/auth/react-native').catch(() => null) as ReactNativeAuthModule | null;
+
+            if (AsyncStorage && reactNativeAuth) {
+                const auth = initializeAuth(firebaseApp, {
+                    persistence: reactNativeAuth.getReactNativePersistence(AsyncStorage.default)
+                });
+                if (process.env.NODE_ENV === 'development' && useEmulators) {
+                    connectAuthEmulator(auth, 'http://localhost:9099');
+                }
+                firebaseAuth = auth;
+            }
+        } catch (error) {
+            console.warn('Failed to initialize React Native auth persistence, falling back to default:', error);
+            // Keep using default auth instance
+        }
+    };
+
+    // Initialize immediately but handle the Promise
+    initializeAuthWithPersistence().catch(error => {
+        console.error('Error during auth persistence initialization:', error);
+    });
+} else {
+    // Use default browser persistence for web
+    if (process.env.NODE_ENV === 'development' && useEmulators) {
+        connectAuthEmulator(firebaseAuth, 'http://localhost:9099');
+    }
 }
 
 /**

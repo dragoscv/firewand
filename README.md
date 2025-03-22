@@ -5,6 +5,21 @@ Firewand is a modular Firebase utility library for simplifying interactions with
 [![npm version](https://badge.fury.io/js/firewand.svg)](https://badge.fury.io/js/firewand)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
+## Platform-Specific Features
+
+### Authentication Persistence
+
+Firewand automatically handles Firebase Authentication persistence based on the platform:
+
+- **React Native**: Uses AsyncStorage for persistence through `@react-native-async-storage/async-storage`
+- **Web**: Uses the default Firebase Auth persistence mechanism
+
+This configuration is handled internally and requires no additional setup, though you must install the peer dependency for React Native:
+
+```bash
+npm install @react-native-async-storage/async-storage
+```
+
 ## Table of Contents
 
 - [Overview](#overview)

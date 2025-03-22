@@ -1,5 +1,6 @@
 import { User } from 'firebase/auth';
-import { Product, Subscription } from '../';
+import { Product } from '../stripe/product';
+import { Subscription } from '../stripe/subscription';
 import { Timestamp } from 'firebase/firestore';
 import { ReactNode } from 'react';
 
@@ -918,6 +919,12 @@ export interface Profile {
 export interface RemoteConfig {
     maintenance: boolean;
     // ...other config properties...
+}
+
+export interface CreditsTotal {
+    profiles: number;
+    services: number;
+    offers: number;
 }
 
 
