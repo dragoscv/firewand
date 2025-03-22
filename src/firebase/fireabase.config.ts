@@ -94,34 +94,49 @@ type ReactNativeAuthModule = {
 let firebaseAuth: Auth = getAuth(firebaseApp);
 let _firebaseAuthRN: Auth | null = null;
 
-// Dynamic import function for React Native auth
-async function initializeReactNativeAuth() {
-    try {
-        const [AsyncStorage, { getReactNativePersistence }] = await Promise.all([
-            import('@react-native-async-storage/async-storage'),
-            import('@firebase/auth/react-native')
-        ]);
+// Static imports for React Native packages
+// This prevents the "Requiring unknown module 'undefined'" error in Expo
+let AsyncStorageModule: any = null;
+let ReactNativeAuthModule: any = null;
 
-        if (AsyncStorage?.default) {
-            _firebaseAuthRN = initializeAuth(firebaseApp, {
-                persistence: getReactNativePersistence(AsyncStorage.default)
-            });
-
-            if (process.env.NODE_ENV === 'development' && useEmulators) {
-                connectAuthEmulator(_firebaseAuthRN, 'http://localhost:9099');
+// Use an IIFE to handle the platform-specific code
+(function setupPlatformAuth() {
+    // Check if we're in React Native environment
+    if (isReactNative) {
+        try {
+            // Use require instead of dynamic import for Expo compatibility
+            if (typeof require !== 'undefined') {
+                // Safely try to require the modules
+                try {
+                    AsyncStorageModule = require('@react-native-async-storage/async-storage').default;
+                } catch (e) {
+                    console.warn('AsyncStorage module not available:', e);
+                }
+                
+                try {
+                    ReactNativeAuthModule = require('@firebase/auth/react-native');
+                } catch (e) {
+                    console.warn('React Native auth module not available:', e);
+                }
+                
+                // Initialize React Native auth if modules are available
+                if (AsyncStorageModule && ReactNativeAuthModule?.getReactNativePersistence) {
+                    _firebaseAuthRN = initializeAuth(firebaseApp, {
+                        persistence: ReactNativeAuthModule.getReactNativePersistence(AsyncStorageModule)
+                    });
+                    
+                    if (process.env.NODE_ENV === 'development' && useEmulators) {
+                        connectAuthEmulator(_firebaseAuthRN, 'http://localhost:9099');
+                    }
+                }
             }
+        } catch (error) {
+            console.error('Error initializing React Native auth:', error);
         }
-    } catch (error) {
-        console.error('Error initializing React Native auth:', error);
+    } else if (process.env.NODE_ENV === 'development' && useEmulators) {
+        connectAuthEmulator(firebaseAuth, 'http://localhost:9099');
     }
-}
-
-// Initialize React Native auth if in RN environment
-if (isReactNative) {
-    initializeReactNativeAuth().catch(console.error);
-} else if (process.env.NODE_ENV === 'development' && useEmulators) {
-    connectAuthEmulator(firebaseAuth, 'http://localhost:9099');
-}
+})();
 
 /**
  * Gets the React Native specific Firebase Auth instance.

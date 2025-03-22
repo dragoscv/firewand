@@ -1,3 +1,43 @@
+// Import specific modules first to avoid circular dependencies
+import {
+    StripePayments,
+    StripePaymentsError,
+    getStripePayments,
+    CREATE_SESSION_TIMEOUT_MILLIS,
+    createCheckoutSession,
+    getCurrentUserPayment as getStripeUserPaymentInternal,
+    getCurrentUserPayments as getStripeUserPaymentsInternal,
+    onCurrentUserPaymentUpdate as onStripeUserPaymentUpdateInternal,
+    getPrice,
+    getPrices,
+    getProduct,
+    getProducts,
+    getCurrentUserSubscription,
+    getCurrentUserSubscriptions,
+    onCurrentUserSubscriptionUpdate,
+    stripePayments
+} from "./stripe";
+
+import {
+    BTPPayments,
+    BTPPaymentsError,
+    getBTPPayments,
+    BTPEnvironment,
+    createPayment,
+    getCurrentUserPayment as getBTPUserPaymentInternal,
+    getCurrentUserPayments as getBTPUserPaymentsInternal,
+    onCurrentUserPaymentUpdate as onBTPUserPaymentUpdateInternal,
+    updatePaymentStatus,
+    PaymentType,
+    PaymentProduct,
+    Currency,
+    TransactionStatus,
+    initiateSimplePayment,
+    BTPProvider,
+    useBTP
+} from "./btpay";
+
+// Export Firebase related functionality
 export * from "./firebase/analytics";
 export * from "./firebase/app";
 export * from "./firebase/auth";
@@ -5,7 +45,7 @@ export {
     firebaseConfig,
     firestoreDB,
     firebaseAuth,
-    getFirebaseAuthRN,  // Changed from firebaseAuthRN to getFirebaseAuthRN
+    getFirebaseAuthRN,
     firebaseStorage,
     firebaseAnalytics,
     firebaseMessaging,
@@ -17,16 +57,13 @@ export * from "./firebase/firestore";
 export * from "./firebase/storage";
 export * from "./hooks/auth";
 
-// Re-export stripe with explicit exports to avoid conflicts
+// Export Stripe with renamed functions to avoid conflicts
 export {
     StripePayments,
     StripePaymentsError,
     getStripePayments,
     CREATE_SESSION_TIMEOUT_MILLIS,
     createCheckoutSession,
-    getCurrentUserPayment as getStripeUserPayment,
-    getCurrentUserPayments as getStripeUserPayments,
-    onCurrentUserPaymentUpdate as onStripeUserPaymentUpdate,
     getPrice,
     getPrices,
     getProduct,
@@ -35,18 +72,20 @@ export {
     getCurrentUserSubscriptions,
     onCurrentUserSubscriptionUpdate,
     stripePayments
-} from "./stripe";
+};
 
-// Re-export btpay with explicit exports to avoid conflicts
+// Re-export renamed Stripe functions
+export const getStripeUserPayment = getStripeUserPaymentInternal;
+export const getStripeUserPayments = getStripeUserPaymentsInternal;
+export const onStripeUserPaymentUpdate = onStripeUserPaymentUpdateInternal;
+
+// Export BTPay with renamed functions to avoid conflicts
 export {
     BTPPayments,
     BTPPaymentsError,
     getBTPPayments,
     BTPEnvironment,
     createPayment,
-    getCurrentUserPayment as getBTPUserPayment,
-    getCurrentUserPayments as getBTPUserPayments,
-    onCurrentUserPaymentUpdate as onBTPUserPaymentUpdate,
     updatePaymentStatus,
     PaymentType,
     PaymentProduct,
@@ -55,7 +94,12 @@ export {
     initiateSimplePayment,
     BTPProvider,
     useBTP
-} from "./btpay";
+};
+
+// Re-export renamed BTPay functions
+export const getBTPUserPayment = getBTPUserPaymentInternal;
+export const getBTPUserPayments = getBTPUserPaymentsInternal;
+export const onBTPUserPaymentUpdate = onBTPUserPaymentUpdateInternal;
 
 export * from "./provider";
 

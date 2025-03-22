@@ -26,7 +26,7 @@ import {
 
 import { firebaseAuth } from "./fireabase.config";
 
-// Instead of static import, we'll use dynamic import
+// Instead of dynamic import, use conditional static imports for Expo compatibility
 let _getReactNativePersistence: ((storage: any) => Persistence) | null = null;
 
 /**
@@ -34,13 +34,22 @@ let _getReactNativePersistence: ((storage: any) => Persistence) | null = null;
  */
 const auth: Auth = firebaseAuth;
 
-// Initialize the React Native persistence getter
-(async () => {
-    try {
-        const reactNativeAuth = await import('@firebase/auth/react-native');
-        _getReactNativePersistence = reactNativeAuth.getReactNativePersistence;
-    } catch (error) {
-        console.warn('React Native auth persistence not available:', error);
+// Initialize the React Native persistence getter with a safer approach
+(function initializeReactNativeAuth() {
+    // Only try to load React Native modules if we're in a React Native environment
+    const isReactNative = typeof navigator !== 'undefined' && 
+        /ReactNative/.test(navigator.userAgent);
+    
+    if (isReactNative && typeof require !== 'undefined') {
+        try {
+            // Use require instead of dynamic import for better Expo compatibility
+            const reactNativeAuth = require('@firebase/auth/react-native');
+            if (reactNativeAuth && reactNativeAuth.getReactNativePersistence) {
+                _getReactNativePersistence = reactNativeAuth.getReactNativePersistence;
+            }
+        } catch (error) {
+            console.warn('React Native auth persistence not available:', error);
+        }
     }
 })();
 
