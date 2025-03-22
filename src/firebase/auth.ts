@@ -20,16 +20,29 @@ import {
     MultiFactorResolver,
     RecaptchaVerifier,
     ApplicationVerifier,
-    getAuth
+    getAuth,
+    Persistence
 } from "@firebase/auth";
-import { getReactNativePersistence as _getReactNativePersistence } from "@firebase/auth/react-native";
 
 import { firebaseAuth } from "./fireabase.config";
+
+// Instead of static import, we'll use dynamic import
+let _getReactNativePersistence: ((storage: any) => Persistence) | null = null;
 
 /**
  * The Firebase authentication object.
  */
 const auth: Auth = firebaseAuth;
+
+// Initialize the React Native persistence getter
+(async () => {
+    try {
+        const reactNativeAuth = await import('@firebase/auth/react-native');
+        _getReactNativePersistence = reactNativeAuth.getReactNativePersistence;
+    } catch (error) {
+        console.warn('React Native auth persistence not available:', error);
+    }
+})();
 
 /**
  * Calls the provided function when the user's sign-in state changes.
@@ -241,8 +254,14 @@ export function getAuthState() {
  * Gets the React Native persistence implementation for Firebase Auth
  * @param storage - The storage implementation (typically AsyncStorage)
  * @returns A persistence layer for Firebase Auth
+ * @throws Error if React Native persistence is not available
  */
-export const getReactNativePersistence = _getReactNativePersistence;
+export async function getReactNativePersistence(storage: any): Promise<Persistence> {
+    if (!_getReactNativePersistence) {
+        throw new Error('React Native persistence is not available');
+    }
+    return _getReactNativePersistence(storage);
+}
 
 
 

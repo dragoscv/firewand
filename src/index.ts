@@ -1,7 +1,7 @@
 export * from "./firebase/analytics";
 export * from "./firebase/app";
 export * from "./firebase/auth";
-export { 
+export {
     firebaseConfig,
     firestoreDB,
     firebaseAuth,
@@ -11,7 +11,7 @@ export {
     firebaseMessaging,
     firebaseFunctions,
     firebaseDB,
-    currentFirebaseApp 
+    currentFirebaseApp
 } from "./firebase/fireabase.config";
 export * from "./firebase/firestore";
 export * from "./firebase/storage";

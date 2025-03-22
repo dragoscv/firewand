@@ -92,58 +92,21 @@ type ReactNativeAuthModule = {
 
 // Initialize Firebase Auth with platform-specific configuration
 let firebaseAuth: Auth = getAuth(firebaseApp);
-
-if (isReactNative) {
-    // In React Native environment, initialize auth with persistence
-    const initializeAuthWithPersistence = async () => {
-        try {
-            const AsyncStorage = await import('@react-native-async-storage/async-storage').catch(() => null);
-            // Use explicit path for React Native auth
-            const reactNativeAuth = await import('@firebase/auth/react-native').catch(() => null) as ReactNativeAuthModule | null;
-
-            if (AsyncStorage && reactNativeAuth) {
-                const auth = initializeAuth(firebaseApp, {
-                    persistence: reactNativeAuth.getReactNativePersistence(AsyncStorage.default)
-                });
-                if (process.env.NODE_ENV === 'development' && useEmulators) {
-                    connectAuthEmulator(auth, 'http://localhost:9099');
-                }
-                firebaseAuth = auth;
-            }
-        } catch (error) {
-            console.warn('Failed to initialize React Native auth persistence, falling back to default:', error);
-            // Keep using default auth instance
-        }
-    };
-
-    // Initialize immediately but handle the Promise
-    initializeAuthWithPersistence().catch(error => {
-        console.error('Error during auth persistence initialization:', error);
-    });
-} else {
-    // Use default browser persistence for web
-    if (process.env.NODE_ENV === 'development' && useEmulators) {
-        connectAuthEmulator(firebaseAuth, 'http://localhost:9099');
-    }
-}
-
-/**
- * Firebase authentication instance for React Native
- * @type {import('firebase/auth').Auth}
- */
 let _firebaseAuthRN: Auth | null = null;
 
-// Initialize the React Native auth instance
-(async () => {
+// Dynamic import function for React Native auth
+async function initializeReactNativeAuth() {
     try {
-        const AsyncStorage = await import('@react-native-async-storage/async-storage').catch(() => null);
-        const reactNativeAuth = await import('@firebase/auth/react-native').catch(() => null) as ReactNativeAuthModule | null;
+        const [AsyncStorage, { getReactNativePersistence }] = await Promise.all([
+            import('@react-native-async-storage/async-storage'),
+            import('@firebase/auth/react-native')
+        ]);
 
-        if (AsyncStorage && reactNativeAuth) {
+        if (AsyncStorage?.default) {
             _firebaseAuthRN = initializeAuth(firebaseApp, {
-                persistence: reactNativeAuth.getReactNativePersistence(AsyncStorage.default)
+                persistence: getReactNativePersistence(AsyncStorage.default)
             });
-            
+
             if (process.env.NODE_ENV === 'development' && useEmulators) {
                 connectAuthEmulator(_firebaseAuthRN, 'http://localhost:9099');
             }
@@ -151,7 +114,14 @@ let _firebaseAuthRN: Auth | null = null;
     } catch (error) {
         console.error('Error initializing React Native auth:', error);
     }
-})();
+}
+
+// Initialize React Native auth if in RN environment
+if (isReactNative) {
+    initializeReactNativeAuth().catch(console.error);
+} else if (process.env.NODE_ENV === 'development' && useEmulators) {
+    connectAuthEmulator(firebaseAuth, 'http://localhost:9099');
+}
 
 /**
  * Gets the React Native specific Firebase Auth instance.
