@@ -20,8 +20,9 @@ import {
     MultiFactorResolver,
     RecaptchaVerifier,
     ApplicationVerifier,
-    getAuth,
-} from "firebase/auth";
+    getAuth
+} from "@firebase/auth";
+import { getReactNativePersistence as _getReactNativePersistence } from "@firebase/auth/react-native";
 
 import { firebaseAuth } from "./fireabase.config";
 
@@ -235,6 +236,13 @@ export function getAuthState() {
     const user = auth.currentUser;
     return { user };
 }
+
+/**
+ * Gets the React Native persistence implementation for Firebase Auth
+ * @param storage - The storage implementation (typically AsyncStorage)
+ * @returns A persistence layer for Firebase Auth
+ */
+export const getReactNativePersistence = _getReactNativePersistence;
 
 
 

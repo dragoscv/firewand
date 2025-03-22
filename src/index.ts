@@ -1,7 +1,18 @@
 export * from "./firebase/analytics";
 export * from "./firebase/app";
 export * from "./firebase/auth";
-export * from "./firebase/fireabase.config";
+export { 
+    firebaseConfig,
+    firestoreDB,
+    firebaseAuth,
+    getFirebaseAuthRN,  // Changed from firebaseAuthRN to getFirebaseAuthRN
+    firebaseStorage,
+    firebaseAnalytics,
+    firebaseMessaging,
+    firebaseFunctions,
+    firebaseDB,
+    currentFirebaseApp 
+} from "./firebase/fireabase.config";
 export * from "./firebase/firestore";
 export * from "./firebase/storage";
 export * from "./hooks/auth";
@@ -54,3 +65,7 @@ export * from "./types/app";
 export * from "./types/chat";
 export * from "./types/post";
 export * from "./types/user";
+
+export {
+    getReactNativePersistence,
+} from './firebase/auth';
