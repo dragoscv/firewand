@@ -37,9 +37,9 @@ const auth: Auth = firebaseAuth;
 // Initialize the React Native persistence getter with a safer approach
 (function initializeReactNativeAuth() {
     // Only try to load React Native modules if we're in a React Native environment
-    const isReactNative = typeof navigator !== 'undefined' && 
+    const isReactNative = typeof navigator !== 'undefined' &&
         /ReactNative/.test(navigator.userAgent);
-    
+
     if (isReactNative && typeof require !== 'undefined') {
         try {
             // Use require instead of dynamic import for better Expo compatibility
@@ -265,11 +265,15 @@ export function getAuthState() {
  * @returns A persistence layer for Firebase Auth
  * @throws Error if React Native persistence is not available
  */
-export async function getReactNativePersistence(storage: any): Promise<Persistence> {
-    if (!_getReactNativePersistence) {
-        throw new Error('React Native persistence is not available');
+export function getReactNativePersistence(storage: any): Persistence {
+    try {
+        // Direct import for better reliability
+        const { getReactNativePersistence: getRNPersistence } = require('firebase/auth/react-native');
+        return getRNPersistence(storage);
+    } catch (error) {
+        console.error('Error getting React Native persistence:', error);
+        throw new Error('React Native persistence is not available. Make sure @react-native-async-storage/async-storage is installed.');
     }
-    return _getReactNativePersistence(storage);
 }
 
 

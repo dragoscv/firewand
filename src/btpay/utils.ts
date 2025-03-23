@@ -8,7 +8,7 @@
  *    https://opensource.org/licenses/ISC
  */
 
-import { BTPPayments } from "./init";
+import { BTPPayments, BTPPaymentsError } from "./init";
 import {
     createPayment,
     CreatePaymentParams,
@@ -19,12 +19,13 @@ import {
 } from "./payment";
 
 export interface SimplifiedPaymentConfig {
-    creditorIBAN: string;
-    creditorName: string;
+    creditorIBAN?: string;
+    creditorName?: string;
     amount: string | number;
     currency?: Currency;
+    paymentType?: PaymentType;
     description?: string;
-    successUrl?: string;
+    redirectUrl?: string;
     cancelUrl?: string;
     metadata?: Record<string, string | number | boolean>;
 }
@@ -35,52 +36,118 @@ export interface SimplifiedPaymentConfig {
  * @param payments - The BTPPayments instance
  * @param config - Simplified payment configuration
  * @returns Promise resolving to the payment response
+ * @throws {BTPPaymentsError} If authentication fails or payment creation fails
  */
 export async function initiateSimplePayment(
     payments: BTPPayments,
     config: SimplifiedPaymentConfig
 ): Promise<PaymentInitiationResponse> {
-    if (!payments.isAuthenticated()) {
-        await payments.authenticate();
+    try {
+        if (!payments.isAuthenticated()) {
+            await payments.authenticate();
+        }
+
+        // Validate required parameters
+        if (config.paymentType === PaymentType.SINGLE) {
+            validateForSinglePayment(config);
+        } else {
+            // For all other payment types, just require amount
+            validateAmount(config.amount);
+        }
+
+        // Allow string or number for amount, but ensure it's converted to string
+        const amountValue = typeof config.amount === "number"
+            ? config.amount.toString()
+            : config.amount;
+
+        // Create payment configuration object
+        const paymentConfig: CreatePaymentParams = {
+            paymentService: config.paymentType || PaymentType.SINGLE,
+            paymentProduct: PaymentProduct.RON,
+            payment: {
+                creditorAccount: config.creditorIBAN ? {
+                    iban: config.creditorIBAN
+                } : { iban: "" },
+                creditorName: config.creditorName || "",
+                instructedAmount: {
+                    currency: config.currency || Currency.RON,
+                    amount: amountValue
+                },
+                remittanceInformationUnstructured: config.description
+            },
+            metadata: config.metadata ?
+                // Ensure metadata is properly typed as Record<string, string>
+                Object.entries(config.metadata).reduce<Record<string, string>>((acc, [key, value]) => {
+                    acc[key] = String(value);
+                    return acc;
+                }, {}) :
+                undefined
+        };
+
+        // Create the payment
+        try {
+            const session = await createPayment(payments, paymentConfig);
+
+            // In a browser environment, redirect to the payment URL if redirectUrl is not provided
+            if (typeof window !== 'undefined' && session.aspspRedirectUrl && !config.redirectUrl) {
+                window.location.assign(session.aspspRedirectUrl);
+            }
+
+            return session;
+        } catch (error) {
+            throw new BTPPaymentsError(
+                "failed-precondition",
+                `Failed to create payment: ${error instanceof Error ? error.message : 'Unknown error'}`,
+                error
+            );
+        }
+    } catch (error) {
+        // Convert regular errors to BTPPaymentsError for consistency
+        if (!(error instanceof BTPPaymentsError)) {
+            throw new BTPPaymentsError(
+                "invalid-argument",
+                error instanceof Error ? error.message : 'Invalid payment configuration',
+                error
+            );
+        }
+        throw error;
+    }
+}
+
+/**
+ * Validates configuration for a single payment type
+ * @param config The payment configuration to validate
+ * @throws Error if validation fails
+ */
+function validateForSinglePayment(config: SimplifiedPaymentConfig): void {
+    if (!config.creditorIBAN) {
+        throw new Error("Creditor IBAN is required for single payments");
     }
 
-    // Validate required parameters
-    checkNonEmptyString(config.creditorIBAN, "Creditor IBAN is required");
-    checkNonEmptyString(config.creditorName, "Creditor name is required");
-
-    // Allow string or number for amount, but ensure it's converted to string
-    const amountValue = typeof config.amount === "number"
-        ? config.amount.toString()
-        : config.amount;
-    checkNonEmptyString(amountValue, "Amount is required");
-
-    // Create payment configuration object
-    const paymentConfig: CreatePaymentParams = {
-        paymentService: PaymentType.SINGLE,
-        paymentProduct: PaymentProduct.RON,
-        payment: {
-            creditorAccount: {
-                iban: config.creditorIBAN
-            },
-            creditorName: config.creditorName,
-            instructedAmount: {
-                currency: config.currency || Currency.RON,
-                amount: amountValue
-            },
-            remittanceInformationUnstructured: config.description
-        },
-        metadata: config.metadata
-    };
-
-    // Create the payment
-    const session = await createPayment(payments, paymentConfig);
-
-    // In a browser environment, redirect to the payment URL
-    if (typeof window !== 'undefined') {
-        window.location.assign(session.aspspRedirectUrl);
+    if (!config.creditorName) {
+        throw new Error("Creditor name is required for single payments");
     }
 
-    return session;
+    validateAmount(config.amount);
+}
+
+/**
+ * Validates that an amount is present and valid
+ * @param amount The amount to validate
+ * @throws Error if validation fails
+ */
+function validateAmount(amount: string | number | undefined): void {
+    if (amount === undefined || amount === null) {
+        throw new Error("Amount is required");
+    }
+
+    if (typeof amount === "string" && (amount === "" || isNaN(parseFloat(amount)))) {
+        throw new Error("Amount must be a valid number");
+    }
+
+    if (typeof amount === "number" && (isNaN(amount) || amount <= 0)) {
+        throw new Error("Amount must be a positive number");
+    }
 }
 
 /**

@@ -1,40 +1,46 @@
 # BTPay API Reference
 
-This document describes the key components and usage of the BTPay library.
+This document describes the key components and usage of the BTPay integration for Firewand.
 
 ## Table of Contents
 
 - [Core Client](#core-client)
 - [Data Types](#data-types)
-- [Lynx Integration](#lynx-integration)
+- [Utility Functions](#utility-functions)
 - [Error Handling](#error-handling)
+- [React Integration](#react-integration)
 
 ## Core Client
 
-### BTPay
+### BTPPayments
 
-The main client for interacting with the BT-BG PSD2 PISP API.
+The main client for interacting with the BTPay API through Firebase.
 
 #### Constructor
 
 ```typescript
-constructor(options: BTPayOptions)
+constructor(app: FirebaseApp, options: BTPOptionsInterface)
 ```
 
-Creates a new BTPay client instance.
+Creates a new BTPPayments client instance.
 
 **Parameters**:
 
-- `options`: Configuration options for the API client
+- `app`: Firebase app instance
+- `options`: Configuration options for the BTPay client
   - `apiKey`: Your API key for authentication
-  - `environment`: Either 'sandbox' or 'production'
+  - `environment`: Either BTPEnvironment.SANDBOX or BTPEnvironment.PRODUCTION
+  - `customersCollection` (optional): Name of the Firestore collection for customer data
+  - `transactionsCollection` (optional): Name of the Firestore collection for transaction data
 
 **Example**:
 
 ```typescript
-const btpay = new BTPay({
-  apiKey: 'YOUR_API_KEY',
-  environment: 'sandbox',
+import { getBTPPayments, BTPEnvironment, firebaseApp } from "firewand";
+
+const btpayClient = getBTPPayments(firebaseApp, {
+  apiKey: "YOUR_API_KEY",
+  environment: BTPEnvironment.SANDBOX,
 });
 ```
 
@@ -46,444 +52,473 @@ const btpay = new BTPay({
 async authenticate(): Promise<boolean>
 ```
 
-Authenticates with the API using OAuth2.
+Authenticates with the BTPay API.
 
 **Returns**: A Promise resolving to a boolean indicating authentication success.
 
 **Example**:
 
 ```typescript
-const isAuthenticated = await btpay.authenticate();
+const isAuthenticated = await btpayClient.authenticate();
 ```
 
-##### createPayment
+##### isAuthenticated
 
 ```typescript
-async createPayment(params: CreatePaymentParams): Promise<PaymentInitiationResponse>
+isAuthenticated(): boolean
 ```
 
-Initiates a payment transaction.
+Checks if the client is authenticated.
 
-**Parameters**:
-
-- `params`: Payment creation parameters
-  - `paymentService`: Type of payment (single, periodic, bulk)
-  - `paymentProduct`: Payment product (ron-payment, other-currency-payment)
-  - `payment`: Payment details
-  - `requestId` (optional): Custom request ID
-  - `psuIpAddress` (optional): IP address of the end-user
-  - `psuGeoLocation` (optional): Geolocation of the end-user
-
-**Returns**: A Promise resolving to the payment initiation response.
+**Returns**: A boolean indicating whether the client is authenticated.
 
 **Example**:
 
 ```typescript
-const payment = await btpay.createPayment({
-  paymentService: PaymentType.SINGLE,
-  paymentProduct: PaymentProduct.RON,
-  payment: {
-    debtorAccount: { iban: 'RO98BTRLRONCRT0ABCDEFGHI' },
-    instructedAmount: { currency: Currency.RON, amount: '50' },
-    creditorAccount: { iban: 'RO98BTRLEURCRT0ABCDEFGHI' },
-    creditorName: 'Dan Popescu',
-  },
+if (btpayClient.isAuthenticated()) {
+  // Client is authenticated
+}
+```
+
+##### getApiEndpoint
+
+```typescript
+getApiEndpoint(): string
+```
+
+Gets the API endpoint URL based on the environment.
+
+**Returns**: The API endpoint URL.
+
+**Example**:
+
+```typescript
+const apiUrl = btpayClient.getApiEndpoint();
+```
+
+## Utility Functions
+
+The BTPay integration provides several utility functions to simplify common tasks.
+
+### initiateSimplePayment
+
+```typescript
+async initiateSimplePayment(
+  payments: BTPPayments,
+  config: SimplifiedPaymentConfig
+): Promise<PaymentInitiationResponse>
+```
+
+Creates and redirects to a BTPay payment interface with simplified configuration.
+
+**Parameters**:
+
+- `payments`: The BTPPayments instance
+- `config`: Simplified payment configuration
+  - `amount`: Payment amount (required)
+  - `currency`: Payment currency (default: Currency.RON)
+  - `paymentType`: Type of payment (default: PaymentType.CARD)
+  - `creditorIBAN`: Creditor's IBAN (required for SINGLE payments)
+  - `creditorName`: Creditor's name (required for SINGLE payments)
+  - `description`: Payment description
+  - `redirectUrl`: URL to redirect after payment
+  - `cancelUrl`: URL to redirect if payment is cancelled
+  - `metadata`: Additional metadata for the payment
+
+**Returns**: Promise resolving to the payment initiation response.
+
+**Example**:
+
+```typescript
+import {
+  initiateSimplePayment,
+  getBTPPayments,
+  Currency,
+  PaymentType,
+  firebaseApp,
+} from "firewand";
+
+const btpayClient = getBTPPayments(firebaseApp, {
+  apiKey: "YOUR_API_KEY",
 });
+
+const makePayment = async () => {
+  const paymentResponse = await initiateSimplePayment(btpayClient, {
+    amount: 100,
+    currency: Currency.RON,
+    paymentType: PaymentType.CARD,
+    description: "Test payment",
+    redirectUrl: "https://example.com/success",
+    cancelUrl: "https://example.com/cancel",
+  });
+
+  // Payment URL is automatically redirected to in browser environments
+  console.log(paymentResponse.paymentUrl);
+};
 ```
 
-##### getPaymentStatus
+### formatAmount
 
 ```typescript
-async getPaymentStatus(
-  paymentId: string,
-  paymentService?: PaymentType,
-  paymentProduct?: string
-): Promise<PaymentStatusResponse>
+formatAmount(
+  amount: string | number,
+  currency: Currency = Currency.RON,
+  locale: string = 'en-US'
+): string
 ```
 
-Gets the status of a payment.
+Formats an amount with currency symbol.
 
 **Parameters**:
 
-- `paymentId`: The ID of the payment
-- `paymentService` (optional): The payment service type (default: PaymentType.SINGLE)
-- `paymentProduct` (optional): The payment product type (default: 'ron-payment')
+- `amount`: Amount to format
+- `currency`: Currency enum value
+- `locale`: Locale string for formatting
 
-**Returns**: A Promise resolving to the payment status.
+**Returns**: Formatted amount string.
 
 **Example**:
 
 ```typescript
-const status = await btpay.getPaymentStatus(payment.paymentId);
+import { formatAmount, Currency } from "firewand";
+
+const formattedAmount = formatAmount(100.5, Currency.RON);
+// Returns: "100.50 RON" (format depends on locale)
 ```
 
-##### getPaymentDetails
+### generateTransactionReference
 
 ```typescript
-async getPaymentDetails(
-  paymentId: string,
-  paymentService?: PaymentType,
-  paymentProduct?: string
-): Promise<any>
+generateTransactionReference(): string
 ```
 
-Gets the details of a payment.
+Generates a unique transaction reference ID.
 
-**Parameters**:
-
-- `paymentId`: The ID of the payment
-- `paymentService` (optional): The payment service type (default: PaymentType.SINGLE)
-- `paymentProduct` (optional): The payment product type (default: 'ron-payment')
-
-**Returns**: A Promise resolving to the payment details.
+**Returns**: A unique reference ID string.
 
 **Example**:
 
 ```typescript
-const details = await btpay.getPaymentDetails(payment.paymentId);
+import { generateTransactionReference } from "firewand";
+
+const reference = generateTransactionReference();
+// Returns something like: "TR1XBCDE2FGHIJ"
 ```
 
-##### confirmBulkPayment
+### formatDateString
 
 ```typescript
-async confirmBulkPayment(
-  bulkPaymentId: string,
-  paymentProduct?: string
-): Promise<any>
+formatDateString(
+  isoDateString: string,
+  locale: string = 'en-US'
+): string
 ```
 
-Confirms a bulk payment.
+Formats a date string from ISO to localized format.
 
 **Parameters**:
 
-- `bulkPaymentId`: The bulk payment ID to confirm
-- `paymentProduct` (optional): The payment product (default: 'ron-payment')
+- `isoDateString`: ISO format date string
+- `locale`: Locale for formatting
 
-**Returns**: A Promise resolving to the confirmation response.
+**Returns**: Formatted date string.
 
 **Example**:
 
 ```typescript
-const confirmation = await btpay.confirmBulkPayment(bulkPaymentId);
+import { formatDateString } from "firewand";
+
+const formattedDate = formatDateString("2025-03-23T15:30:00Z");
+// Returns: "March 23, 2025, 3:30 PM" (format depends on locale)
 ```
 
 ## Data Types
 
 ### Enums
 
+#### BTPEnvironment
+
+```typescript
+enum BTPEnvironment {
+  SANDBOX = "sandbox",
+  PRODUCTION = "production",
+}
+```
+
+Environment settings for BTPay API.
+
 #### PaymentType
 
 ```typescript
 enum PaymentType {
-  SINGLE = 'payments',
-  PERIODIC = 'periodic-payments',
-  BULK = 'bulk-payments',
+  SINGLE = "payments",
+  PERIODIC = "periodic-payments",
+  BULK = "bulk-payments",
+  CARD = "card-payments",
 }
 ```
+
+Types of payments supported by BTPay.
 
 #### PaymentProduct
 
 ```typescript
 enum PaymentProduct {
-  RON = 'ron-payment',
-  OTHER_CURRENCY = 'other-currency-payment',
+  RON = "ron-payment",
+  OTHER_CURRENCY = "other-currency-payment",
 }
 ```
+
+Payment product types.
 
 #### Currency
 
 ```typescript
 enum Currency {
-  RON = 'RON',
-  EUR = 'EUR',
-  USD = 'USD',
-  GBP = 'GBP',
+  RON = "RON",
+  EUR = "EUR",
+  USD = "USD",
+  GBP = "GBP",
 }
 ```
+
+Supported currencies.
 
 #### TransactionStatus
 
 ```typescript
 enum TransactionStatus {
-  RCVD = 'RCVD', // Received
-  ACTC = 'ACTC', // AcceptedTechnicalValidation
-  ACCP = 'ACCP', // AcceptedCustomerProfile
-  ACWC = 'ACWC', // AcceptedWithChange
-  ACFC = 'ACFC', // AcceptedFundsChecked
-  ACSC = 'ACSC', // AcceptedSettlementCompleted
-  RJCT = 'RJCT', // Rejected
-  PDNG = 'PDNG', // Pending
-  CANC = 'CANC', // Cancelled
+  RCVD = "RCVD", // Received
+  ACTC = "ACTC", // AcceptedTechnicalValidation
+  ACCP = "ACCP", // AcceptedCustomerProfile
+  ACWC = "ACWC", // AcceptedWithChange
+  ACFC = "ACFC", // AcceptedFundsChecked
+  ACSC = "ACSC", // AcceptedSettlementCompleted
+  RJCT = "RJCT", // Rejected
+  PDNG = "PDNG", // Pending
+  CANC = "CANC", // Cancelled
 }
 ```
+
+Payment transaction statuses.
 
 ### Interfaces
 
-#### Account
+#### BTPOptionsInterface
 
 ```typescript
-interface Account {
-  iban: string;
+interface BTPOptionsInterface {
+  apiKey: string;
+  environment?: BTPEnvironment;
+  customersCollection?: string;
+  transactionsCollection?: string;
 }
 ```
 
-#### Amount
+Options for initializing BTPPayments.
+
+#### SimplifiedPaymentConfig
 
 ```typescript
-interface Amount {
-  currency: Currency;
-  amount: string;
+interface SimplifiedPaymentConfig {
+  creditorIBAN?: string;
+  creditorName?: string;
+  amount: string | number;
+  currency?: Currency;
+  paymentType?: PaymentType;
+  description?: string;
+  redirectUrl?: string;
+  cancelUrl?: string;
+  metadata?: Record<string, string | number | boolean>;
 }
 ```
 
-#### Address
+Configuration for simplified payment initiation.
+
+#### CreatePaymentParams
 
 ```typescript
-interface Address {
-  country: string;
-  city?: string;
-  street?: string;
-  buildingNumber?: string;
+interface CreatePaymentParams {
+  paymentService: PaymentType;
+  paymentProduct: PaymentProduct;
+  payment: {
+    creditorAccount?: {
+      iban: string;
+    };
+    creditorName?: string;
+    instructedAmount: {
+      currency: Currency;
+      amount: string;
+    };
+    remittanceInformationUnstructured?: string;
+  };
+  redirectUrl?: string;
+  cancelUrl?: string;
+  metadata?: Record<string, any>;
 }
 ```
 
-#### BTPaymentInitiationRon
+Parameters for creating a payment.
+
+#### PaymentInitiationResponse
 
 ```typescript
-interface BTPaymentInitiationRon {
-  debtorAccount?: Account;
-  instructedAmount: Amount;
-  creditorAccount: Account;
-  creditorName: string;
-  debtorId?: string;
-  endToEndIdentification?: string;
-  remittanceInformationUnstructured?: string;
+interface PaymentInitiationResponse {
+  paymentId: string;
+  transactionStatus: TransactionStatus;
+  paymentUrl?: string;
+  aspspRedirectUrl?: string;
+  psuMessage?: string;
 }
 ```
 
-#### BTPaymentInitiationVal
-
-```typescript
-interface BTPaymentInitiationVal {
-  debtorAccount?: Account;
-  instructedAmount: Amount;
-  creditorAccount: Account;
-  creditorAgent: string; // BIC/SWIFT
-  creditorAgentName: string; // Creditor Bank Name
-  creditorName: string;
-  creditorAddress: Address;
-  endToEndIdentification?: string;
-  remittanceInformationUnstructured?: string;
-}
-```
-
-## Lynx Integration
-
-The BTPay library includes React hooks and components for easier integration with the Lynx framework.
-
-### Hooks
-
-#### useBTPay
-
-```typescript
-const useBTPay = () => {
-  // Returns the BTPay context with methods and state
-};
-```
-
-Provides access to the BTPay client methods and state.
-
-**Returns**:
-
-- `isInitialized`: Whether the client is initialized
-- `isAuthenticated`: Whether the client is authenticated
-- `isLoading`: Whether an operation is in progress
-- `error`: Any error that occurred
-- `paymentResponse`: The last payment initiation response
-- `paymentStatus`: The last payment status
-- `authenticate`: Function to authenticate
-- `initiatePayment`: Function to initiate a payment
-- `getPaymentStatus`: Function to get payment status
-- `reset`: Function to reset state
-
-**Example**:
-
-```typescript
-const { initiatePayment, paymentStatus, isLoading, error } = useBTPay();
-```
-
-#### usePayment
-
-```typescript
-const usePayment = (pollingIntervalMs?: number, maxPolls?: number) => {
-  // Returns payment functionality with automatic status polling
-};
-```
-
-Provides payment functionality with automatic status polling.
-
-**Parameters**:
-
-- `pollingIntervalMs` (optional): Interval between status polls in ms (default: 3000)
-- `maxPolls` (optional): Maximum number of status polls (default: 10)
-
-**Returns**:
-
-- `createPayment`: Function to create a payment
-- `checkStatus`: Function to check payment status once
-- `startPolling`: Function to start status polling
-- `stopPolling`: Function to stop status polling
-- `paymentId`: The current payment ID
-- `paymentResponse`: The payment initiation response
-- `paymentStatus`: The payment status
-- `isLoading`: Whether an operation is in progress
-- `isPolling`: Whether status polling is active
-- `error`: Any error that occurred
-- `reset`: Function to reset state
-
-**Example**:
-
-```typescript
-const { createPayment, paymentStatus, isPolling } = usePayment(2000, 5);
-```
-
-#### usePaymentError
-
-```typescript
-const usePaymentError = () => {
-  // Returns payment error handling functionality
-};
-```
-
-Provides payment error handling functionality.
-
-**Returns**:
-
-- `error`: The raw error
-- `errorDetails`: Structured error details
-- `hasError`: Whether an error exists
-
-**Example**:
-
-```typescript
-const { errorDetails, hasError } = usePaymentError();
-```
-
-### Components
-
-#### BTPayInitializer
-
-```typescript
-<BTPayInitializer apiKey="YOUR_API_KEY" environment="sandbox">
-  {/* Your app content */}
-</BTPayInitializer>
-```
-
-Initializes the BTPay client.
-
-**Props**:
-
-- `apiKey`: Your API key for authentication
-- `environment` (optional): Either 'sandbox' or 'production' (default: 'sandbox')
-- `children`: Your app content
-
-#### PaymentButton
-
-```typescript
-<PaymentButton
-  paymentProduct="ron-payment"
-  paymentData={paymentData}
-  onSuccess={handleSuccess}
-  onError={handleError}
->
-  Make Payment
-</PaymentButton>
-```
-
-Button that initiates a payment when clicked.
-
-**Props**:
-
-- `paymentProduct`: Payment product
-- `paymentData`: Payment data
-- `onSuccess` (optional): Callback for successful payment
-- `onError` (optional): Callback for payment error
-- `onStatusChange` (optional): Callback for status changes
-- `disabled` (optional): Whether the button is disabled
-- `children` (optional): Button content (default: 'Pay Now')
-- `style` (optional): Button style
-- `className` (optional): Button class name
-
-#### PaymentStatus
-
-```typescript
-<PaymentStatus
-  paymentId={paymentId}
-  pollingInterval={3000}
-  pollingAttempts={10}
-  onStatusChange={handleStatusChange}
-  renderStatus={(status, isLoading) => (
-    <div>{isLoading ? 'Loading...' : `Status: ${status}`}</div>
-  )}
-/>
-```
-
-Component that displays and manages payment status.
-
-**Props**:
-
-- `paymentId` (optional): Payment ID to check
-- `pollingInterval` (optional): Interval between status polls in ms (default: 3000)
-- `pollingAttempts` (optional): Maximum number of status polls (default: 10)
-- `onStatusChange` (optional): Callback for status changes
-- `renderStatus` (optional): Custom renderer for status display
-
-#### ErrorDisplay
-
-```typescript
-<ErrorDisplay
-  renderError={(message, code) => (
-    <div className="error">Error {code}: {message}</div>
-  )}
-/>
-```
-
-Component that displays payment errors.
-
-**Props**:
-
-- `renderError` (optional): Custom renderer for error display
+Response from payment initiation.
 
 ## Error Handling
 
-### ApiError
+### BTPPaymentsError
 
 ```typescript
-class ApiError extends Error {
-  status: number;
-  data: any;
+class BTPPaymentsError extends Error {
+  public readonly code: BTPErrorCode;
+  public readonly cause?: unknown;
 }
 ```
 
-Custom error class for API errors.
+Custom error class for BTPay-related errors.
 
 **Properties**:
 
-- `status`: HTTP status code
-- `data`: Error data from API
+- `code`: Error code from BTPErrorCode
 - `message`: Error message
+- `cause`: Original error that caused this error
 
 **Example**:
 
 ```typescript
+import { BTPPaymentsError } from "firewand";
+
 try {
-  await btpay.createPayment(params);
+  await btpayClient.authenticate();
 } catch (error) {
-  if (error instanceof ApiError) {
-    console.error(`API Error ${error.status}: ${error.message}`);
-    console.error(error.data);
-  } else {
-    console.error(`Error: ${error.message}`);
+  if (error instanceof BTPPaymentsError) {
+    console.error(`BTPay Error (${error.code}): ${error.message}`);
+    // Handle specific errors based on code
+    if (error.code === "unauthenticated") {
+      // Handle authentication errors
+    }
   }
+}
+```
+
+### BTPErrorCode
+
+```typescript
+type BTPErrorCode =
+  | "cancelled"
+  | "unknown"
+  | "invalid-argument"
+  | "deadline-exceeded"
+  | "not-found"
+  | "already-exists"
+  | "permission-denied"
+  | "resource-exhausted"
+  | "failed-precondition"
+  | "aborted"
+  | "out-of-range"
+  | "unimplemented"
+  | "internal"
+  | "unavailable"
+  | "data-loss"
+  | "unauthenticated";
+```
+
+Error codes for BTPay operations.
+
+## React Integration
+
+The BTPay integration includes React components and hooks for easier integration.
+
+### BTPProvider
+
+```typescript
+<BTPProvider
+  firebaseApp={firebaseApp}
+  apiKey="YOUR_API_KEY"
+  environment={BTPEnvironment.SANDBOX}
+>
+  {children}
+</BTPProvider>
+```
+
+Provider component that initializes BTPay and makes it available to child components.
+
+**Props**:
+
+- `firebaseApp`: Firebase app instance
+- `apiKey`: BTPay API key
+- `environment`: BTPay environment
+- `customersCollection` (optional): Name of the customers collection
+- `transactionsCollection` (optional): Name of the transactions collection
+- `children`: Child components
+
+**Example**:
+
+```tsx
+import { BTPProvider, BTPEnvironment, firebaseApp } from "firewand";
+
+function App() {
+  return (
+    <BTPProvider
+      firebaseApp={firebaseApp}
+      apiKey="YOUR_API_KEY"
+      environment={BTPEnvironment.SANDBOX}
+    >
+      <YourApp />
+    </BTPProvider>
+  );
+}
+```
+
+### useBTP
+
+```typescript
+const useBTP = () => {
+  // Returns BTPay context
+};
+```
+
+Hook for accessing BTPay functions and data from the BTPProvider.
+
+**Returns**:
+
+- `btpayClient`: BTPPayments instance
+- `isInitialized`: Whether BTPay is initialized
+- `isAuthenticated`: Whether BTPay is authenticated
+- `authenticate`: Function to authenticate
+- `createPayment`: Function to create a payment
+- `getCurrentPayment`: Function to get current payment
+- `getCurrentPayments`: Function to get all payments
+- `onPaymentUpdate`: Function to listen for payment updates
+
+**Example**:
+
+```tsx
+import { useBTP } from "firewand";
+
+function PaymentComponent() {
+  const { btpayClient, isAuthenticated, createPayment } = useBTP();
+
+  const handlePayment = async () => {
+    if (!isAuthenticated) {
+      await btpayClient.authenticate();
+    }
+
+    await createPayment({
+      // Payment details
+    });
+  };
+
+  return <button onClick={handlePayment}>Make Payment</button>;
 }
 ```

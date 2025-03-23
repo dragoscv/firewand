@@ -1,12 +1,23 @@
 {
   "name": "firewand",
-  "version": "0.3.18",
+  "version": "0.3.19",
   "description": "Firewand is a modular Firebase utility library for simplifying interactions with Firebase services such as Analytics, Auth, Firestore, Storage, and Stripe payments.",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
+  "main": "dist/cjs/index.js",
+  "module": "dist/esm/index.js",
+  "types": "dist/types/index.d.ts",
+  "exports": {
+    ".": {
+      "require": "./dist/cjs/index.js",
+      "import": "./dist/esm/index.js",
+      "types": "./dist/types/index.d.ts"
+    }
+  },
   "scripts": {
-    "build": "tsc",
-    "start": "node dist/index.js",
+    "clean": "rimraf dist",
+    "build": "npm run clean && npm run build:cjs && npm run build:esm",
+    "build:cjs": "tsc --module commonjs --outDir dist/cjs",
+    "build:esm": "tsc --module es2020 --outDir dist/esm",
+    "start": "node dist/cjs/index.js",
     "test": "jest",
     "test:watch": "jest --watch",
     "prepublishOnly": "npm run build",
@@ -39,6 +50,12 @@
     "uuid": "^11.1.0"
   },
   "peerDependencies": {
-    "firebase": "^11.3.1"
+    "firebase": "^11.3.1",
+    "@firebase/auth": "^1.9.1",
+    "react": ">=16.8.0",
+    "react-native": ">=0.59.0"
+  },
+  "optionalDependencies": {
+    "@react-native-async-storage/async-storage": "^1.23.1"
   }
 }
