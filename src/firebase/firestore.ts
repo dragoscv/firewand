@@ -12,10 +12,23 @@ import {
     runTransaction,
     where,
     addDoc,
-    setDoc
+    setDoc,
+    connectFirestoreEmulator,
+    getFirestore
 } from "firebase/firestore";
 
-import { firestoreDB } from "./fireabase.config";
+import { firebaseApp } from "./app";
+import { useEmulators } from "./utils";
+
+/**
+ * Firestore database instance
+ * @type {import('firebase/firestore').Firestore}
+ */
+export const firestoreDB = getFirestore(firebaseApp);
+
+if (process.env.NODE_ENV === 'development' && useEmulators) {
+    connectFirestoreEmulator(firestoreDB, 'localhost', 8080);
+}
 
 /**
  * Asynchronously retrieves all documents from a specified Firestore collection.

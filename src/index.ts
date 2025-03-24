@@ -15,7 +15,7 @@ import {
     getCurrentUserSubscription,
     getCurrentUserSubscriptions,
     onCurrentUserSubscriptionUpdate,
-    stripePayments
+    stripePayments,
 } from "./stripe";
 
 import {
@@ -38,24 +38,25 @@ import {
 } from "./btpay";
 
 // Export Firebase related functionality
-export * from "./firebase/analytics";
-export * from "./firebase/app";
-export * from "./firebase/auth";
 export {
-    firebaseConfig,
-    firestoreDB,
-    firebaseAuth,
-    getFirebaseAuthRN,
-    firebaseStorage,
+    firebaseApp,
     firebaseAnalytics,
-    firebaseMessaging,
+    logAnalyticsEvent,
+    // firebaseAuth,
+    firebaseConfig,
     firebaseFunctions,
-    firebaseDB,
-    currentFirebaseApp
-} from "./firebase/fireabase.config";
-export * from "./firebase/firestore";
-export * from "./firebase/storage";
-export * from "./hooks/auth";
+    firebaseMessaging,
+    firebaseStorage,
+    firestoreDB,
+    realtimeDB,
+    signInWithGoogle,
+    signOutUser
+    // setFirebaseAuth,
+    // getCurrentUser,
+    // onAuthStateChange,
+    // signOut
+} from "./firebase";
+// export { useUserSession } from "./hooks/auth";
 
 // Export Stripe with renamed functions to avoid conflicts
 export {
@@ -109,7 +110,3 @@ export * from "./types/app";
 export * from "./types/chat";
 export * from "./types/post";
 export * from "./types/user";
-
-export {
-    getReactNativePersistence,
-} from './firebase/auth';

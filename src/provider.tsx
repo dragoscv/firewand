@@ -4,7 +4,7 @@ import { getCurrentUserSubscriptions, onCurrentUserSubscriptionUpdate } from "./
 import { stripePayments } from "./stripe/utils";
 import { useUserSession } from "./hooks/auth";
 import { firebaseApp } from "./firebase/app";
-import { firestoreDB, firebaseMessaging } from "./firebase/fireabase.config";
+import { firestoreDB, firebaseMessaging } from "./firebase";
 import { collection, doc, setDoc, getDocs, query as queryFirestore, where, onSnapshot, collectionGroup, orderBy, limit, QuerySnapshot, DocumentSnapshot, deleteDoc, startAfter, getDoc, Timestamp } from "firebase/firestore";
 import { fetchAndActivate, getRemoteConfig, getValue } from "firebase/remote-config";
 import { getToken, Messaging } from "firebase/messaging";

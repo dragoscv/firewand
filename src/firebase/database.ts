@@ -1,7 +1,18 @@
 
 
-import { firebaseDB } from "./fireabase.config";
-import { ref, set, get, remove, update, } from "firebase/database";
+
+import { ref, set, get, remove, update, getDatabase, connectDatabaseEmulator } from "firebase/database";
+import { firebaseApp } from "./app";
+
+/**
+ * Firebase Realtime Database instance
+ * @type {import('firebase/database').Database}
+ * @see {@link https://firebase.google.com/docs/database/web/start|Firebase Realtime Database Documentation}
+ * */
+export const firebaseDB = getDatabase(firebaseApp);
+if (process.env.NODE_ENV === 'development' && process.env.USE_EMULATORS) {
+    connectDatabaseEmulator(firebaseDB, 'localhost', 9080);
+}
 
 /**
  * Adds or sets an object at the specified path in the Firebase Realtime Database.

@@ -1,8 +1,7 @@
 import { initializeApp, getApp } from 'firebase/app';
-import { firebaseConfig } from './fireabase.config';
+import { firebaseConfig } from './firebase.config.js';
 
-initializeApp(firebaseConfig)
-const app = getApp();
+const app = initializeApp(firebaseConfig);
 
 /**
  * Export of the initialized Firebase application instance.
@@ -13,4 +12,4 @@ const app = getApp();
  * 
  * @exports {FirebaseApp} firebaseApp - The Firebase application instance
  */
-export const firebaseApp = app;
+export const firebaseApp = app ? app : getApp(firebaseConfig.appId || 'default');
