@@ -38,6 +38,7 @@ import {
   checkNonEmptyString,
   checkPositiveNumber,
 } from "./utils";
+import { firebaseApp } from "../firebase";
 
 export interface SessionConfig {
   firebaseApp: FirebaseApp;
@@ -563,7 +564,7 @@ function getOrInitSessionDAO(payments: StripePayments): SessionDAO {
   let dao: SessionDAO | null =
     payments.getComponent<SessionDAO>(SESSION_DAO_KEY);
   if (!dao) {
-    dao = new FirestoreSessionDAO(payments.app, payments.customersCollection);
+    dao = new FirestoreSessionDAO(firebaseApp, payments.customersCollection);
     setSessionDAO(payments, dao);
   }
 

@@ -1,6 +1,6 @@
 {
   "name": "firewand",
-  "version": "0.4.35",
+  "version": "0.5.1",
   "description": "Firewand is a modular Firebase utility library for simplifying interactions with Firebase services such as Analytics, Auth, Firestore, Storage, and Stripe payments.",
   "main": "dist/cjs/index.js",
   "module": "dist/esm/index.js",

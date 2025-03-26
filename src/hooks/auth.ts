@@ -3,8 +3,8 @@ import { useEffect, useState } from 'react'
 // import { firebaseApp } from '@/utils/firebase/app'
 // import { firebaseAuth } from '../firebase/auth'
 import { getDoc, doc } from 'firebase/firestore'
-import { onAuthStateChanged } from 'firebase/auth'
-import { firestoreDB } from '../firebase'
+import { onAuthStateChanged, getAuth } from 'firebase/auth'
+import { firestoreDB, firebaseApp } from '../firebase'
 
 /**
  * Custom hook to get the current user session from Firebase Authentication.
@@ -35,7 +35,7 @@ import { firestoreDB } from '../firebase'
 export function useUserSession() {
     const [user, setUser] = useState<User | null>(null)
     const [userDetails, setUserDetails] = useState<any>(null)
-    const firebaseAuth = null // firebaseAuth // getAuth(firebaseApp)
+    const firebaseAuth = getAuth(firebaseApp)
     useEffect(() => {
         if (!firebaseAuth) {
             console.error('Firebase Auth is not initialized')

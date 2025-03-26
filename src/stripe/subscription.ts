@@ -40,6 +40,7 @@ import {
 import { StripePayments, StripePaymentsError } from "./init";
 import { getCurrentUser, getCurrentUserSync } from "./user";
 import { checkNonEmptyArray, checkNonEmptyString } from "./utils";
+import { firebaseApp } from "../firebase";
 
 /**
  * Interface of a Stripe Subscription stored in the app database.
@@ -505,7 +506,7 @@ function getOrInitSubscriptionDAO(payments: StripePayments): SubscriptionDAO {
     payments.getComponent<SubscriptionDAO>(SUBSCRIPTION_DAO_KEY);
   if (!dao) {
     dao = new FirestoreSubscriptionDAO(
-      payments.app,
+      firebaseApp,
       payments.customersCollection
     );
     setSubscriptionDAO(payments, dao);

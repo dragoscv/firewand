@@ -103,10 +103,18 @@ export const getBTPUserPayments = getBTPUserPaymentsInternal;
 export const onBTPUserPaymentUpdate = onBTPUserPaymentUpdateInternal;
 
 export * from "./provider";
+export * from "./providerNative"
 
 // Re-export types
 export * from "./types/basic";
-export * from "./types/app";
+export {
+    Invoice,
+    ProfileDetailsProps,
+    UserDetails,
+    UserRole
+} from "./types/app";
 export * from "./types/chat";
 export * from "./types/post";
-export * from "./types/user";
+export {
+    AppUser
+} from "./types/user";

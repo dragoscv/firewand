@@ -17,6 +17,7 @@
 import { FirebaseApp } from "firebase/app";
 import { Auth, getAuth } from "firebase/auth";
 import { StripePayments, StripePaymentsError } from "./init";
+import { firebaseApp } from "../firebase";
 
 /**
  * Internal API for retrieving the currently signed in user. Rejects with "unauthenticated" if
@@ -80,7 +81,7 @@ const USER_DAO_KEY = "user-dao" as const;
 function getOrInitUserDAO(payments: StripePayments): UserDAO {
   let dao: UserDAO | null = payments.getComponent<UserDAO>(USER_DAO_KEY);
   if (!dao) {
-    dao = new FirebaseAuthUserDAO(payments.app);
+    dao = new FirebaseAuthUserDAO(firebaseApp);
     setUserDAO(payments, dao);
   }
 

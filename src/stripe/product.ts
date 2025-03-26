@@ -38,6 +38,7 @@ import {
 } from "@firebase/firestore";
 import { StripePayments, StripePaymentsError } from "./init";
 import { checkNonEmptyString } from "./utils";
+import { firebaseApp } from "../firebase";
 
 /**
  * Interface of a Stripe Product stored in the app database.
@@ -506,7 +507,7 @@ function getOrInitProductDAO(payments: StripePayments): ProductDAO {
   let dao: ProductDAO | null =
     payments.getComponent<ProductDAO>(PRODUCT_DAO_KEY);
   if (!dao) {
-    dao = new FirestoreProductDAO(payments.app, payments.productsCollection);
+    dao = new FirestoreProductDAO(firebaseApp, payments.productsCollection);
     setProductDAO(payments, dao);
   }
 

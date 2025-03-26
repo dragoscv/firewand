@@ -39,6 +39,7 @@ import {
 import { StripePayments, StripePaymentsError } from "./init";
 import { getCurrentUser, getCurrentUserSync } from "./user";
 import { checkNonEmptyArray, checkNonEmptyString } from "./utils";
+import { firebaseApp } from "../firebase";
 
 /**
  * Interface of a Stripe payment stored in the app database.
@@ -448,7 +449,7 @@ function getOrInitPaymentDAO(payments: StripePayments): PaymentDAO {
   let dao: PaymentDAO | null =
     payments.getComponent<PaymentDAO>(PAYMENT_DAO_KEY);
   if (!dao) {
-    dao = new FirestorePaymentDAO(payments.app, payments.customersCollection);
+    dao = new FirestorePaymentDAO(firebaseApp, payments.customersCollection);
     setPaymentDAO(payments, dao);
   }
 
