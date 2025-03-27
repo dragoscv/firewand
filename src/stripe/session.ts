@@ -510,6 +510,7 @@ class FirestoreSessionDAO implements SessionDAO {
         doc.withConverter(SESSION_CONVERTER),
         (snap: DocumentSnapshot<PartialSession>) => {
           const session: PartialSession | undefined = snap.data();
+          console.log("Session data:", session);
           if (hasSessionId(session)) {
             clearTimeout(timeout);
             resolve(session);
@@ -530,10 +531,12 @@ class FirestoreSessionDAO implements SessionDAO {
   }
 }
 
+
+
 type PartialSession = Partial<Session>;
 
 function hasSessionId(session: PartialSession | undefined): session is Session {
-  return typeof session?.id !== "undefined";
+  return typeof session?.url !== "undefined";
 }
 
 const SESSION_CONVERTER: FirestoreDataConverter<PartialSession> = {
