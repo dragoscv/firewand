@@ -3,6 +3,7 @@ export * from './user';
 export * from './post';
 export * from './chat';
 export * from './app';
+export * from './stripe';
 
 // Re-export types from other modules for centralized access
 export type {

@@ -2,7 +2,7 @@ import React, { createContext, useMemo, useReducer, useEffect, useCallback, useS
 import { getProducts } from "./stripe/product";
 import { getCurrentUserSubscriptions, onCurrentUserSubscriptionUpdate } from "./stripe/subscription";
 import { stripePayments } from "./stripe/utils";
-import { useUserSession } from "./hooks/auth";
+import { useUserSession } from "./hooks/useAuth";
 import { firebaseApp } from "./firebase/app";
 import { firestoreDB, firebaseMessaging } from "./firebase";
 import { collection, doc, setDoc, getDocs, query as queryFirestore, where, onSnapshot, collectionGroup, orderBy, limit, QuerySnapshot, DocumentSnapshot, deleteDoc, startAfter, getDoc, Timestamp } from "firebase/firestore";
