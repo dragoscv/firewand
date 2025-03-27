@@ -189,7 +189,7 @@ export function FirewandProviderNative({ children, app }: FirewandProviderNative
             dispatch({ type: 'SET_IS_SUBSCRIBED', payload: false });
             return;
         }
-        
+
         const payments = stripePayments(firebaseApp)
         const getSubscriptions = async () => {
             const subscriptions = await getCurrentUserSubscriptions(payments);
@@ -223,7 +223,7 @@ export function FirewandProviderNative({ children, app }: FirewandProviderNative
             })
             dispatch({ type: 'SET_USER_ACTIVE_SUBSCRIPTIONS', payload: activeSubscriptions });
         }
-        
+
         if (user) getSubscriptions();
 
         if (user) onCurrentUserSubscriptionUpdate(payments, (subscriptions) => {
@@ -252,7 +252,7 @@ export function FirewandProviderNative({ children, app }: FirewandProviderNative
     // Fetch user payments from Firestore
     useEffect(() => {
         if (!user) return;
-        
+
         const getPayments = async () => {
             const paymentsArray: any[] = []
             const paymentsQuery = queryFirestore(
@@ -277,7 +277,7 @@ export function FirewandProviderNative({ children, app }: FirewandProviderNative
     // Fetch user profiles from Firestore
     useEffect(() => {
         if (!user) return;
-        
+
         const q = queryFirestore(collection(firestoreDB, `profiles`), where('uid', '==', user.uid));
         const unsubscribe = onSnapshot(q, (querySnapshot) => {
             const profiles: Profile[] = [];
@@ -295,7 +295,7 @@ export function FirewandProviderNative({ children, app }: FirewandProviderNative
     // Fetch user invoices from Firestore
     useEffect(() => {
         if (!user) return;
-        
+
         const getInvoices = async () => {
             const invoicesArray: any[] = []
             const invoicesQuery = queryFirestore(
