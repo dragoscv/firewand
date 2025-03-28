@@ -26,7 +26,6 @@ import type {
     SessionConfig,
     SubscriptionSnapshot
 } from '../types';
-import { } from ".."
 
 /**
  * Hook for managing Stripe payments and subscriptions

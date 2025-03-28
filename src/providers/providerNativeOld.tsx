@@ -1,14 +1,14 @@
 import React, { createContext, useReducer, useEffect, useCallback, useState } from 'react';
-import { getProducts } from "./stripe/product";
-import { getCurrentUserSubscriptions, onCurrentUserSubscriptionUpdate } from "./stripe/subscription";
-import { stripePayments } from "./stripe/utils";
-import { useUserSession } from "./hooks/useAuth";
-import { firebaseApp } from "./firebase/app";
-import { firestoreDB } from "./firebase";
+import { getProducts } from "../stripe/product";
+import { getCurrentUserSubscriptions, onCurrentUserSubscriptionUpdate } from "../stripe/subscription";
+import { stripePayments } from "../stripe/utils";
+import { useUserSession } from "../hooks/useAuth";
+import { firebaseApp } from "../firebase/app";
+import { firestoreDB } from "../firebase";
 import { collection, doc, getDocs, query as queryFirestore, where, onSnapshot, orderBy, limit, QuerySnapshot, DocumentSnapshot, getDoc } from "firebase/firestore";
 import { fetchAndActivate, getRemoteConfig, getValue } from "firebase/remote-config";
 
-import { Profile } from './types';
+import { Profile } from '../types';
 
 // Define the interfaces specifically for the native provider
 export interface FirewandContextNativeProps {

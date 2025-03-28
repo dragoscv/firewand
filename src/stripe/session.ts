@@ -307,6 +307,13 @@ export interface Session {
    * to `true`.
    */
   readonly trial_from_plan?: boolean;
+
+  /**
+ * The ephemeralKeySecret associated with the session. This key is used to securely access the
+ * session data from the client side. This field is only present if the session was created with
+ * `ephemeralKey` set to `true`.
+ * */
+  ephemeralKeySecret?: string;
 }
 
 /**
@@ -344,6 +351,7 @@ export interface LineItem {
    * The quantity of the line item being purchased.
    */
   quantity?: number;
+
 }
 
 export const CREATE_SESSION_TIMEOUT_MILLIS = 30 * 1000;
@@ -511,7 +519,7 @@ class FirestoreSessionDAO implements SessionDAO {
         (snap: DocumentSnapshot<PartialSession>) => {
           const session: PartialSession | undefined = snap.data();
           console.log("Session data:", session);
-          if (hasSessionId(session)) {
+          if (hasSessionId(session) || hasEphemeralKey(session)) {
             clearTimeout(timeout);
             resolve(session);
           }
@@ -537,6 +545,12 @@ type PartialSession = Partial<Session>;
 
 function hasSessionId(session: PartialSession | undefined): session is Session {
   return typeof session?.url !== "undefined";
+}
+
+function hasEphemeralKey(
+  session: PartialSession | undefined
+): session is Session {
+  return typeof session?.ephemeralKeySecret !== "undefined";
 }
 
 const SESSION_CONVERTER: FirestoreDataConverter<PartialSession> = {

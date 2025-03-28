@@ -1,6 +1,6 @@
 {
   "name": "firewand",
-  "version": "0.5.6",
+  "version": "0.5.11",
   "description": "Firewand is a modular Firebase utility library for simplifying interactions with Firebase services such as Analytics, Auth, Firestore, Storage, and Stripe payments.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -45,13 +45,14 @@
     "btpay": "^0.2.0",
     "expo-constants": "^17.0.8",
     "tslib": "^2.8.1",
-    "uuid": "^11.1.0"
+    "uuid": "^11.1.0",
+    "@stripe/stripe-react-native": "^0.43.0"
   },
   "peerDependencies": {
-    "firebase": "^11.3.1",
+    "firebase": ">=11.3.1",
     "react": ">=16.8.0",
     "react-native": ">=0.59.0",
-    "expo-router": "^3.0.0",
-    "expo-linking": "^6.0.0"
+    "expo-router": ">=3.0.0",
+    "expo-linking": ">=6.0.0"
   }
 }
