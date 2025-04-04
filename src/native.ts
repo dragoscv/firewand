@@ -1,15 +1,5 @@
-// Main entry point for Firewand that dynamically chooses the right version
-// when used in different environments
-
-// Platform detection
-const isReactNative = typeof navigator !== 'undefined' && navigator.product === 'ReactNative';
-
-// We'll use the appropriate version based on the detected platform
-// Web is the default for Next.js and other web apps
-export * from './web';
-
-// This comment helps TypeScript know about the native export path
-// To use React Native specific functionality, import from 'firewand/native'
+// Native-only entry point for Firewand
+// This file exports React Native specific modules and functionality
 
 // Import specific modules first to avoid circular dependencies
 import {
@@ -55,7 +45,8 @@ export {
     firebaseApp,
     firebaseAnalytics,
     logAnalyticsEvent,
-    // firebaseAuth,
+    // firebaseAuth is intentionally NOT exported for native version
+    // as it needs to be created differently in React Native environments
     firebaseConfig,
     firebaseFunctions,
     firebaseMessaging,
@@ -64,14 +55,9 @@ export {
     realtimeDB,
     signInWithGoogle,
     signOutUser
-    // setFirebaseAuth,
-    // getCurrentUser,
-    // onAuthStateChange,
-    // signOut
 } from "./firebase";
-// export { useUserSession } from "./hooks/auth";
 
-// Export Stripe with renamed functions to avoid conflicts
+// Export Stripe
 export {
     StripePayments,
     StripePaymentsError,
@@ -93,7 +79,7 @@ export const getStripeUserPayment = getStripeUserPaymentInternal;
 export const getStripeUserPayments = getStripeUserPaymentsInternal;
 export const onStripeUserPaymentUpdate = onStripeUserPaymentUpdateInternal;
 
-// Export BTPay with renamed functions to avoid conflicts
+// Export BTPay
 export {
     BTPPayments,
     BTPPaymentsError,
@@ -115,8 +101,8 @@ export const getBTPUserPayment = getBTPUserPaymentInternal;
 export const getBTPUserPayments = getBTPUserPaymentsInternal;
 export const onBTPUserPaymentUpdate = onBTPUserPaymentUpdateInternal;
 
-export * from "./providers/provider";
-export * from "./providers/providerNative"
+// Export native provider
+export { FirewandProviderNative, FirewandContextNative } from "./providers/providerNative";
 
 // Re-export types
 export * from "./types/basic";

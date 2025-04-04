@@ -16,6 +16,7 @@ import { firestoreDB, firebaseApp } from '../firebase'
  * This hook uses Firebase Authentication to track the current user's authentication state
  * and fetches additional user details from Firestore when a user is authenticated.
  * 
+ * @param enableLogs - Whether to enable detailed logging (defaults to false)
  * @returns An object containing:
  *  - user: The current Firebase Auth user object or null if not authenticated
  *  - userDetails: Additional user information from Firestore or null if not available
@@ -32,40 +33,106 @@ import { firestoreDB, firebaseApp } from '../firebase'
  * }
  * ```
  */
-export function useUserSession() {
+export function useUserSession(enableLogs?: boolean) {
+    if (enableLogs) console.log('🔥 useUserSession hook initialized');
+
     const [user, setUser] = useState<User | null>(null)
     const [userDetails, setUserDetails] = useState<any>(null)
     const firebaseAuth = getAuth(firebaseApp)
+
     useEffect(() => {
         if (!firebaseAuth) {
             console.error('Firebase Auth is not initialized')
             return
         }
+
+        if (enableLogs) console.log('🔥 Setting up auth state listener');
+
         const unsubscribe = onAuthStateChanged(firebaseAuth, (currentUser) => {
             if (currentUser) {
+                if (enableLogs) {
+                    console.log('🔥 Auth state changed: User signed in', {
+                        uid: currentUser.uid,
+                        email: currentUser.email,
+                        displayName: currentUser.displayName,
+                        emailVerified: currentUser.emailVerified,
+                        isAnonymous: currentUser.isAnonymous,
+                        metadata: {
+                            creationTime: currentUser.metadata.creationTime,
+                            lastSignInTime: currentUser.metadata.lastSignInTime
+                        }
+                    });
+                }
                 setUser(currentUser)
             } else {
+                if (enableLogs) console.log('🔥 Auth state changed: User signed out');
                 setUser(null)
                 setUserDetails(null)
             }
         })
 
-        return () => unsubscribe()
+        return () => {
+            if (enableLogs) console.log('🔥 Cleaning up auth state listener');
+            unsubscribe()
+        }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
 
     useEffect(() => {
         if (user) {
+            if (enableLogs) console.log('🔥 User present, fetching additional user details from Firestore');
+
             const getUserDetails = async () => {
-                const userDoc = await getDoc(doc(firestoreDB, 'users', user.uid))
-                setUserDetails(userDoc.data())
+                try {
+                    const userDocRef = doc(firestoreDB, 'users', user.uid);
+                    if (enableLogs) console.log(`🔥 Fetching user doc from path: users/${user.uid}`);
+
+                    const userDoc = await getDoc(userDocRef)
+
+                    if (userDoc.exists()) {
+                        const userData = userDoc.data();
+                        if (enableLogs) {
+                            console.log('🔥 User document found in Firestore', {
+                                docId: userDoc.id,
+                                hasData: !!userData,
+                                dataFields: userData ? Object.keys(userData) : []
+                            });
+                        }
+                        setUserDetails(userData)
+                    } else {
+                        if (enableLogs) console.log('🔥 No user document found in Firestore for this user');
+                        setUserDetails(null)
+                    }
+                } catch (error: any) {
+                    console.error('Error fetching user details', error);
+                    if (enableLogs) {
+                        console.error('🔥 Detailed Firestore error:', {
+                            code: error.code,
+                            message: error.message,
+                            userId: user.uid
+                        });
+                    }
+                    setUserDetails(null)
+                }
             }
 
             getUserDetails()
         }
-    }, [user])
+    }, [user, enableLogs])
 
-
+    if (enableLogs && user && userDetails) {
+        console.log('🔥 Current authenticated session', {
+            user: {
+                uid: user.uid,
+                email: user.email,
+                displayName: user.displayName
+            },
+            userDetails: {
+                fields: Object.keys(userDetails),
+                hasCustomClaims: !!userDetails.customClaims
+            }
+        });
+    }
 
     return { user, userDetails }
 }

@@ -10,6 +10,7 @@ import { ReactNode } from 'react';
 export interface FirewandProviderProps {
     children: React.ReactNode;
     app: string;
+    logs?: boolean;
 }
 
 export interface FirewandContextProps {

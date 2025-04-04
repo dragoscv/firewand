@@ -7,7 +7,6 @@ import { firebaseApp } from "../firebase/app";
 import { firestoreDB } from "../firebase";
 import { collection, doc, getDocs, query as queryFirestore, where, onSnapshot, orderBy, limit, QuerySnapshot, DocumentSnapshot, getDoc } from "firebase/firestore";
 import { fetchAndActivate, getRemoteConfig, getValue } from "firebase/remote-config";
-import { StripeProvider } from '@stripe/stripe-react-native';
 
 import { Profile } from '../types';
 
@@ -31,6 +30,7 @@ export interface FirewandContextNativeProps {
 export interface FirewandProviderNativeProps {
     children: React.ReactNode;
     app: string;
+    logs?: boolean;
 }
 
 export interface FirewandStateNativeProps {
@@ -55,10 +55,13 @@ export interface FirewandActionNativeProps {
 
 export const FirewandContextNative = createContext<FirewandContextNativeProps | undefined>(undefined);
 
-export function FirewandProviderNative({ children, app }: FirewandProviderNativeProps) {
+export function FirewandProviderNative({ children, app, logs }: FirewandProviderNativeProps) {
     if (!app) {
         throw new Error('App name is required in the FirewandProviderNative component');
     }
+
+    if (logs) console.log('FirewandProviderNative initializing with app:', app);
+
     const { user, userDetails } = useUserSession();
     const [loading, setLoading] = useState({
         profiles: false,
@@ -82,6 +85,8 @@ export function FirewandProviderNative({ children, app }: FirewandProviderNative
     }
 
     const reducer = (state: FirewandStateNativeProps, action: FirewandActionNativeProps) => {
+        if (logs) console.log('FirewandProviderNative reducer:', action.type, action.payload);
+
         switch (action.type) {
             case 'SET_PRODUCTS':
                 return { ...state, products: action.payload };
@@ -248,7 +253,7 @@ export function FirewandProviderNative({ children, app }: FirewandProviderNative
                 }
             }
         })
-    }, [user, state.products, state.userPayments]);
+    }, [user, state.products]);
 
     // Fetch user payments from Firestore
     useEffect(() => {
@@ -349,13 +354,7 @@ export function FirewandProviderNative({ children, app }: FirewandProviderNative
                 remoteConfig: state.remoteConfig
             }}
         >
-            <StripeProvider
-                publishableKey={process.env.STRIPE_PUBLISHABLE_KEY || ''}
-                urlScheme="your-url-scheme" // required for 3D Secure and bank account authentication
-                merchantIdentifier="merchant.com.your-merchant-id" // required for Apple Pay
-            >
-                {React.Children.toArray(children) as React.ReactElement[]}
-            </StripeProvider>
+            {children}
         </FirewandContextNative.Provider>
     );
 }

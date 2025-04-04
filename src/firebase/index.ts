@@ -1,6 +1,6 @@
 export { firebaseApp } from './app'
 export {
-    // firebaseAuth, 
+    firebaseAuth, 
     signInWithGoogle,
     signOutUser
 } from './auth'

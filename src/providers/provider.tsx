@@ -20,10 +20,13 @@ import {
 
 export const FirewandContext = createContext<FirewandContextProps | undefined>(undefined);
 
-export function FirewandProvider({ children, app }: FirewandProviderProps) {
+export function FirewandProvider({ children, app, logs }: FirewandProviderProps) {
     if (!app) {
         throw new Error('App name is required in the FirewandProvider component');
     }
+
+    if (logs) console.log('FirewandProvider initializing with app:', app);
+
     const { user, userDetails } = useUserSession();
     const [loading, setLoading] = useState({
         profiles: false,
@@ -52,6 +55,8 @@ export function FirewandProvider({ children, app }: FirewandProviderProps) {
     }
 
     const reducer = (state: FirewandStateProps, action: FirewandActionProps) => {
+        if (logs) console.log('FirewandProvider reducer:', action.type, action.payload);
+
         switch (action.type) {
             case 'SET_PRODUCTS':
                 return { ...state, products: action.payload };
@@ -92,7 +97,8 @@ export function FirewandProvider({ children, app }: FirewandProviderProps) {
 
     const fetchUsers = useCallback(async () => {
         if (state.users && state.users.length > 0) return;
-        // console.log('Getting users')
+        if (logs) console.log('Fetching users from Firestore');
+
         const q = queryFirestore(collection(firestoreDB, "users"));
         const unsubscribe = onSnapshot(q, (querySnapshot) => {
             const users: any = [];
@@ -101,23 +107,24 @@ export function FirewandProvider({ children, app }: FirewandProviderProps) {
                 docData.id = doc.id;
                 users.push(docData);
             });
+            if (logs) console.log('Users fetched:', users.length);
             dispatch({ type: 'SET_USERS', payload: users });
         });
 
         return () => unsubscribe();
-    }, []);
+    }, [logs]);
 
     const fetchPlatformPayments = useCallback(async () => {
         if (!user) return;
-        // console.log('Getting platform payments')
+        if (logs) console.log('Fetching platform payments');
 
         const getPlatformPayments = async () => {
             const paymentsArray: any[] = []
             // Query the 'payments' subcollection from all 'customers'
             const paymentsQuery = queryFirestore(
                 collectionGroup(firestoreDB, "payments"),
-                orderBy("created", "desc"), // Assumes 'created' field in each payment document
-                limit(100) // Adjust the limit as needed to get the most recent payments
+                orderBy("created", "desc"),
+                limit(100)
             );
 
             // Get the query results
@@ -125,18 +132,17 @@ export function FirewandProvider({ children, app }: FirewandProviderProps) {
 
             // Process the documents
             querySnapshot.forEach((doc) => {
-                // console.log(doc.id, " => ", doc.data());
                 const docData = doc.data();
                 docData.id = doc.id
                 paymentsArray.push(docData);
             });
 
-            // console.log(paymentsArray);
+            if (logs) console.log('Platform payments fetched:', paymentsArray.length);
             dispatch({ type: 'SET_PLATFORM_PAYMENTS', payload: paymentsArray });
         }
 
         getPlatformPayments();
-    }, []);
+    }, [user, logs]);
 
     const switchCurrentProfile = useCallback((profile: string) => {
         //add to session storage
@@ -181,7 +187,8 @@ export function FirewandProvider({ children, app }: FirewandProviderProps) {
     useEffect(() => {
         if (state.products && state.products.length) return;
 
-        // console.log('Getting products')
+        if (logs) console.log('Fetching products from Stripe');
+
         const getProductsF = async () => {
             const payments = stripePayments(firebaseApp);
 
@@ -189,20 +196,22 @@ export function FirewandProvider({ children, app }: FirewandProviderProps) {
                 includePrices: true,
                 activeOnly: true,
             });
-            // console.log(products);
+
+            if (logs) console.log('Raw products from Stripe:', products.length);
+
             const productsArray: any[] = []
             products.forEach((product: any) => {
                 if (product.metadata.app === app) {
                     productsArray.push(product);
                 }
             })
-            // console.log(productsArray)
+
+            if (logs) console.log('Filtered products for app:', productsArray.length);
             dispatch({ type: 'SET_PRODUCTS', payload: productsArray });
         }
 
         getProductsF();
-
-    }, []);
+    }, [logs, app]);
 
     //This code gets the remote config from the db
     useEffect(() => {
